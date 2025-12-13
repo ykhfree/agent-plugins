@@ -7,11 +7,7 @@
     "url": "https://github.com/ykhfree"
   },
   "homepage": "https://github.com/ykhfree/claude-plugins",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/ykhfree/claude-plugins.git",
-    "directory": "plugins/pr-comment-review"
-  },
+  "repository": "https://github.com/ykhfree/claude-plugins",
   "license": "MIT",
   "keywords": [
     "github",
@@ -19,11 +15,5 @@
     "code-review",
     "comments",
     "analysis"
-  ],
-  "requirements": {
-    "tools": [
-      "gh",
-      "git"
-    ]
-  }
+  ]
 }
