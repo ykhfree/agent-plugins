@@ -1,5 +1,5 @@
 {
-  "name": "pr-comment-review",
+  "name": "pr-comment",
   "version": "1.0.0",
   "description": "A tool that analyzes and categorizes all comments on GitHub PRs. Organizes unresolved comments by priority for easy review.",
   "author": {

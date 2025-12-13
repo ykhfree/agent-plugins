@@ -9,7 +9,7 @@ This repository is a Claude Code plugin marketplace that hosts multiple plugins 
 **Repository**: https://github.com/ykhfree/claude-plugins
 
 Current plugins:
-- **pr-comment-review**: Analyzes GitHub PR comments and categorizes them by priority
+- **pr-comment**: Analyzes GitHub PR comments and categorizes them by priority
 
 ## Architecture
 
@@ -19,11 +19,11 @@ Current plugins:
 ├── .claude-plugin/
 │   └── marketplace.json          # Marketplace definition with all plugins
 ├── plugins/
-│   ├── pr-comment-review/        # Individual plugin directory
+│   ├── pr-comment/               # Individual plugin directory
 │   │   ├── .claude-plugin/
 │   │   │   └── plugin.json       # Plugin-specific metadata
 │   │   └── commands/
-│   │       └── pr-comment-review.md
+│   │       └── review.md
 │   └── [future-plugins]/         # Additional plugins go here
 ├── README.md
 └── CLAUDE.md
@@ -53,12 +53,12 @@ Each command consists of frontmatter (YAML) and Markdown body:
 ```bash
 # Install plugin locally
 /plugin marketplace add ykhfree/claude-plugins
-/plugin install pr-comment-review
+/plugin install pr-comment
 
-# Test command execution
-/pr-comment-review                    # Current branch
-/pr-comment-review feature/login      # Specific branch
-/pr-comment-review 123                # PR number
+# Test command execution (format: /plugin-name:command-name)
+/pr-comment:review                    # Current branch
+/pr-comment:review feature/login      # Specific branch
+/pr-comment:review 123                # PR number
 ```
 
 ### Git Operations
@@ -124,6 +124,13 @@ git push origin main
 - **Include error handling**: Failure cases and response methods
 - **Specify external tool dependencies**: Required tools such as `gh`, `git`, etc.
 
+### Command Naming Best Practices
+Commands are invoked as `/plugin-name:command-name`. To avoid redundancy:
+- **Keep command names short**: Use `review.md` instead of `pr-comment-review.md`
+- **Keep plugin names concise**: `pr-comment` is better than `pr-comment-review`
+- **Example**: Plugin `pr-comment` with command `review.md` → `/pr-comment:review`
+- **Avoid duplication**: Don't name the command file the same as the plugin name
+
 ### Plugin Metadata Synchronization
 When modifying a plugin, ensure these files are synchronized:
 1. `plugins/{plugin-name}/.claude-plugin/plugin.json`: version, description, requirements
@@ -132,7 +139,7 @@ When modifying a plugin, ensure these files are synchronized:
 
 ## Plugin-Specific Notes
 
-### pr-comment-review Plugin
+### pr-comment Plugin
 
 #### GitHub CLI Integration
 This plugin fetches PR data using GitHub CLI (`gh`):
@@ -154,7 +161,7 @@ gh pr view <pr-number> --hostname github.mycompany.com
 ```
 
 #### PR Comment Categorization Logic
-Categorization system that the pr-comment-review command implements:
+Categorization system that the review command implements:
 
 **Categories:**
 - 🔧 **Fix Required**: Bugs, logic errors, mandatory changes

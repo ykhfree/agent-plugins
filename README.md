@@ -18,8 +18,8 @@ Automatically analyzes all comments on GitHub PRs and organizes unresolved items
 
 ### Install a Plugin
 ```bash
-# Install PR Comment Review plugin
-/plugin install pr-comment-review
+# Install PR Comment plugin
+/plugin install pr-comment
 
 # More plugins coming soon...
 ```
@@ -32,22 +32,22 @@ Automatically analyzes all comments on GitHub PRs and organizes unresolved items
 
 **Basic Usage (Analyze PR for Current Branch)**
 ```bash
-/pr-comment-review
+/pr-comment:review
 ```
 
 **Analyze PR for a Specific Branch**
 ```bash
-/pr-comment-review feature/login
+/pr-comment:review feature/login
 ```
 
 **Analyze by PR Number**
 ```bash
-/pr-comment-review 123
+/pr-comment:review 123
 ```
 
 **Use Different GitHub Host (Enterprise GitHub)**
 ```bash
-/pr-comment-review github.mycompany.com:feature/login
+/pr-comment:review github.mycompany.com:feature/login
 ```
 
 #### Features
