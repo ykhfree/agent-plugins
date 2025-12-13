@@ -1,0 +1,19 @@
+{
+  "name": "ykhfree-plugins",
+  "owner": {
+    "name": "kanghyun.yang",
+    "url": "https://github.com/ykhfree"
+  },
+  "repository": "https://github.com/ykhfree/claude-plugins",
+  "plugins": [
+    {
+      "name": "pr-comment-review",
+      "source": "./plugins/pr-comment-review",
+      "description": "A tool that analyzes and categorizes all comments on GitHub PRs. Organizes unresolved comments by priority for easy review.",
+      "version": "1.0.0",
+      "author": {
+        "name": "kanghyun.yang"
+      }
+    }
+  ]
+}

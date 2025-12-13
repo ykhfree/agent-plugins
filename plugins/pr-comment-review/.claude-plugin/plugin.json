@@ -1,0 +1,29 @@
+{
+  "name": "pr-comment-review",
+  "version": "1.0.0",
+  "description": "A tool that analyzes and categorizes all comments on GitHub PRs. Organizes unresolved comments by priority for easy review.",
+  "author": {
+    "name": "kanghyun.yang",
+    "url": "https://github.com/ykhfree"
+  },
+  "homepage": "https://github.com/ykhfree/claude-plugins",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ykhfree/claude-plugins.git",
+    "directory": "plugins/pr-comment-review"
+  },
+  "license": "MIT",
+  "keywords": [
+    "github",
+    "pr",
+    "code-review",
+    "comments",
+    "analysis"
+  ],
+  "requirements": {
+    "tools": [
+      "gh",
+      "git"
+    ]
+  }
+}
