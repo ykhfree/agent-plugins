@@ -14,6 +14,15 @@
       "author": {
         "name": "kanghyun.yang"
       }
+    },
+    {
+      "name": "mutation-harden",
+      "source": "./plugins/mutation-harden",
+      "description": "Runs PIT mutation testing on Gradle Kotlin projects with JUnit 5, lists survived mutants as test gaps, and verifies that each new test kills its target mutant.",
+      "version": "1.0.0",
+      "author": {
+        "name": "kanghyun.yang"
+      }
     }
   ]
 }

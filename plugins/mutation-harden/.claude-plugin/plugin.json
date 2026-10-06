@@ -1,0 +1,20 @@
+{
+  "name": "mutation-harden",
+  "version": "1.0.0",
+  "description": "Runs PIT mutation testing on Gradle Kotlin projects with JUnit 5, lists survived mutants as test gaps, and verifies that each new test kills its target mutant.",
+  "author": {
+    "name": "kanghyun.yang",
+    "url": "https://github.com/ykhfree"
+  },
+  "homepage": "https://github.com/ykhfree/claude-plugins",
+  "repository": "https://github.com/ykhfree/claude-plugins",
+  "license": "MIT",
+  "keywords": [
+    "mutation-testing",
+    "pitest",
+    "kotlin",
+    "gradle",
+    "junit5",
+    "testing"
+  ]
+}

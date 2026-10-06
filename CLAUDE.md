@@ -10,6 +10,7 @@ This repository is a Claude Code plugin marketplace that hosts multiple plugins 
 
 Current plugins:
 - **pr-comment**: Analyzes GitHub PR comments and categorizes them by priority
+- **mutation-harden**: Runs PIT mutation testing on Gradle Kotlin projects and verifies tests that kill survived mutants
 
 ## Architecture
 
