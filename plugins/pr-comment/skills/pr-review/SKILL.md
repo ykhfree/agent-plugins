@@ -1,5 +1,5 @@
 ---
-name: review
+name: pr-review
 description: Analyzes all comments on a GitHub PR and categorizes unresolved items by priority. Use when the user asks to review, summarize, or triage the comments on a pull request.
 ---
 

@@ -44,14 +44,14 @@ npx skills add ykhfree/agent-plugins
 #### Usage
 
 Ask in natural language, for example "Review the comments on PR 123".
-The agent picks the `review` skill from its description.
+The agent picks the `pr-review` skill from its description.
 
 In Claude Code, you can also call it directly:
 ```bash
-/pr-comment:review                                  # PR for the current branch
-/pr-comment:review feature/login                    # PR for a specific branch
-/pr-comment:review 123                              # PR number
-/pr-comment:review github.mycompany.com:feature/login   # GitHub Enterprise host
+/pr-comment:pr-review                                  # PR for the current branch
+/pr-comment:pr-review feature/login                    # PR for a specific branch
+/pr-comment:pr-review 123                              # PR number
+/pr-comment:pr-review github.mycompany.com:feature/login   # GitHub Enterprise host
 ```
 
 #### Features

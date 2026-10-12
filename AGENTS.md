@@ -39,7 +39,7 @@ Do not add a root `plugin.json` (Agent Plugins format). Codex 0.142.3 ignores it
 │       ├── .claude-plugin/
 │       │   └── plugin.json       # Plugin metadata
 │       └── skills/
-│           └── review/
+│           └── pr-review/
 │               └── SKILL.md      # Skill instructions
 ├── AGENTS.md
 ├── CLAUDE.md                     # Imports AGENTS.md
@@ -91,8 +91,10 @@ Every plugin must work in every supported agent. Follow these rules:
 
 ## Naming
 
-In Claude Code, a skill runs as `/plugin-name:skill-name`. Keep both names short and do not repeat the plugin name in the skill name.
-Example: plugin `pr-comment` with skill `review` runs as `/pr-comment:review`.
+Only Claude Code puts the plugin name in front of a skill name (`/plugin-name:skill-name`).
+Copilot CLI and the skills CLI show the bare skill name, so a generic name such as `review` can clash with another skill.
+Give each skill a name that is clear without the plugin name, and keep it short.
+Example: plugin `pr-comment` with skill `pr-review` runs as `/pr-comment:pr-review` in Claude Code and appears as `pr-review` elsewhere.
 
 ## Metadata Synchronization
 
@@ -141,4 +143,4 @@ Use conventional commit messages, such as `feat: add new skill`, `fix: resolve p
 ### pr-comment
 - Requires the GitHub CLI (`gh`), authenticated with `gh auth login`.
 - For a GitHub Enterprise host, the skill sets `GH_HOST`. `gh pr` has no `--hostname` option.
-- The categorization and priority rules are in `plugins/pr-comment/skills/review/SKILL.md`.
+- The categorization and priority rules are in `plugins/pr-comment/skills/pr-review/SKILL.md`.
