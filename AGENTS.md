@@ -118,16 +118,19 @@ codex plugin marketplace add "$PWD"
 codex plugin add <plugin-name>@ykhfree-plugins
 codex plugin list
 
-# Copilot CLI: add the local marketplace, install, then remove
+# Copilot CLI: add the marketplace, install, then remove
 copilot plugin marketplace add "$PWD"
 copilot plugin install <plugin-name>@ykhfree-plugins
-copilot plugin list
+copilot plugin list --json
 
 # Any agent: list the skills that the skills CLI finds
 npx skills add "$PWD" --list
 ```
 
 If a marketplace named `ykhfree-plugins` is already added from GitHub, remove it first or test on a copy with a different marketplace `name`.
+
+Copilot CLI 1.0.10 installs a plugin from a local-path marketplace with `"source": "live"` and `"enabled": false`, so its skills do not load.
+This checks only that Copilot parses the files. To check that the skills load, push first and install from `ykhfree/agent-plugins`. Then `copilot plugin list --json` must show `"enabled": true`.
 
 ## Git
 
