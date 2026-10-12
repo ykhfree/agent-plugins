@@ -1,24 +1,25 @@
 ---
-description: Analyzes all comments on a PR and categorizes unresolved items by priority
-argument-hint: [branch|pr-number] [hostname]
+name: review
+description: Analyzes all comments on a GitHub PR and categorizes unresolved items by priority. Use when the user asks to review, summarize, or triage the comments on a pull request.
 ---
 
 Analyze all comments on the PR.
 
-## Arguments
-- $ARGUMENTS: Branch name or PR number (optional)
-  - Examples: `feature/login`, `123`, `github.mycompany.com:feature/login`
-  - Format: `[hostname:]<branch|pr-number>`
-  - Uses current branch if not specified
+## Input
+The user can name a PR target. It is optional.
+- Format: `[hostname:]<branch|pr-number>`
+- Examples: `feature/login`, `123`, `github.mycompany.com:feature/login`
+- If the user names no target, use the current branch.
 
 ## Instructions
 
 ### Step 1: Identify PR Information
-1. If arguments are provided:
-   - If numeric: Use as PR number
-   - If string: Use as branch name
-   - If `hostname:value` format: Use Enterprise GitHub host
-2. If no arguments: Use current branch name
+1. If the user named a target:
+   - If it is numeric: Use it as the PR number
+   - If it is a string: Use it as the branch name
+   - If it has the `hostname:value` format: Set `GH_HOST=<hostname>` for every `gh` command
+2. If the user named no target: Use the current branch name
+3. If you have a branch name, get the PR number: `gh pr view <branch> --json number --jq '.number'`
 
 ### Step 2: Analyze PR Changes
 Analyze the PR's code changes to understand context before reviewing comments.
@@ -121,4 +122,4 @@ Format the output as follows:
 - Move review threads with `isResolved: true` to the "Resolved" section
 - Display file path and line number for each comment
 - Truncate long comments to first 100 characters
-- Use `--hostname` option for Enterprise GitHub
+- For Enterprise GitHub, set `GH_HOST=<hostname>` (`gh pr` has no `--hostname` option)

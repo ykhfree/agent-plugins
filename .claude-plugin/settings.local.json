@@ -1,6 +1,0 @@
-{
-  "env": {
-    "CROSS_MEMORY_DIR": "~/PycharmProjects/cross-memory/memory-store/claude-plugin/memory",
-    "CROSS_MEMORY_AUTOSYNC": "1"
-  }
-}

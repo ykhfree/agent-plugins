@@ -1,13 +1,13 @@
 {
   "name": "pr-comment",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "A tool that analyzes and categorizes all comments on GitHub PRs. Organizes unresolved comments by priority for easy review.",
   "author": {
     "name": "kanghyun.yang",
     "url": "https://github.com/ykhfree"
   },
-  "homepage": "https://github.com/ykhfree/claude-plugins",
-  "repository": "https://github.com/ykhfree/claude-plugins",
+  "homepage": "https://github.com/ykhfree/agent-plugins",
+  "repository": "https://github.com/ykhfree/agent-plugins",
   "license": "MIT",
   "keywords": [
     "github",

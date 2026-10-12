@@ -1,31 +1,40 @@
-# Claude Code Plugins Marketplace
+# Agent Plugins Marketplace
 
-A collection of Claude Code plugins for enhancing development workflows.
+A collection of plugins for AI coding agents. One repository works with Claude Code, Codex, GitHub Copilot CLI, and any agent that supports [Agent Skills](https://agentskills.io).
 
-🔗 **Repository**: [https://github.com/ykhfree/claude-plugins](https://github.com/ykhfree/claude-plugins)
+🔗 **Repository**: [https://github.com/ykhfree/agent-plugins](https://github.com/ykhfree/agent-plugins)
 
 ## Available Plugins
 
-### PR Comment Review
-Automatically analyzes all comments on GitHub PRs and organizes unresolved items by priority.
-
-### Mutation Harden
-Runs PIT mutation testing on Gradle Kotlin projects and closes the test gaps that survived mutants show.
+### PR Comment Review (`pr-comment`)
+Analyzes all comments on a GitHub PR and organizes unresolved items by priority.
 
 ## Installation
 
-### Add the Marketplace
+The marketplace name is `ykhfree-plugins`. Each agent installs a plugin as `<plugin>@ykhfree-plugins`.
+
+### Claude Code
 ```bash
-/plugin marketplace add ykhfree/claude-plugins
+/plugin marketplace add ykhfree/agent-plugins
+/plugin install pr-comment@ykhfree-plugins
 ```
 
-### Install a Plugin
+### Codex
 ```bash
-# Install PR Comment plugin
-/plugin install pr-comment
+codex plugin marketplace add ykhfree/agent-plugins
+codex plugin add pr-comment@ykhfree-plugins
+```
 
-# Install Mutation Harden plugin
-/plugin install mutation-harden
+### GitHub Copilot CLI
+```bash
+copilot plugin marketplace add ykhfree/agent-plugins
+copilot plugin install pr-comment@ykhfree-plugins
+```
+
+### Other agents (Cursor, Gemini CLI, and more)
+Install the skills directly with the [skills CLI](https://github.com/vercel-labs/skills):
+```bash
+npx skills add ykhfree/agent-plugins
 ```
 
 ## Plugin Documentation
@@ -34,24 +43,15 @@ Runs PIT mutation testing on Gradle Kotlin projects and closes the test gaps tha
 
 #### Usage
 
-**Basic Usage (Analyze PR for Current Branch)**
-```bash
-/pr-comment:review
-```
+Ask in natural language, for example "Review the comments on PR 123".
+The agent picks the `review` skill from its description.
 
-**Analyze PR for a Specific Branch**
+In Claude Code, you can also call it directly:
 ```bash
-/pr-comment:review feature/login
-```
-
-**Analyze by PR Number**
-```bash
-/pr-comment:review 123
-```
-
-**Use Different GitHub Host (Enterprise GitHub)**
-```bash
-/pr-comment:review github.mycompany.com:feature/login
+/pr-comment:review                                  # PR for the current branch
+/pr-comment:review feature/login                    # PR for a specific branch
+/pr-comment:review 123                              # PR number
+/pr-comment:review github.mycompany.com:feature/login   # GitHub Enterprise host
 ```
 
 #### Features
@@ -76,41 +76,9 @@ Runs PIT mutation testing on Gradle Kotlin projects and closes the test gaps tha
 - Git installed
 - GitHub account authenticated (`gh auth login`)
 
-### Mutation Harden
-
-#### Usage
-
-The `mutation-harden` skill starts when you ask for mutation testing in natural language. Examples:
-- "Run mutation testing on the changes in this branch"
-- "PIT 돌려서 살아남은 뮤턴트로 테스트 헛점 보강해줘"
-
-You can also call it directly:
-```bash
-/mutation-harden:mutation-harden
-```
-
-#### Workflow
-
-1. Records a fingerprint of the main code.
-2. Finds the changed Kotlin classes against the base branch.
-3. Runs PIT on each changed module.
-4. Lists survived mutants as gaps.
-5. Gives each gap a verdict and asks for your approval before it writes tests.
-6. Writes one focused test per approved gap.
-7. Verifies each test with a PIT run of that one test method. The run must report the target mutant as `KILLED`.
-
-The skill never changes files under `src/main/` and never commits.
-
-#### Requirements
-
-- Gradle project with Kotlin main code under `src/main/kotlin`
-- JUnit 5 tests (Kotest is not supported)
-- Gradle wrapper 7.6 or later
-- Python 3 and Git installed
-
 ## Contributing
 
-More plugins coming soon! Feel free to suggest new plugin ideas or contribute.
+To add a plugin, follow the portability rules in [AGENTS.md](AGENTS.md).
 
 ## License
 
