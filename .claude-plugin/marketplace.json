@@ -16,6 +16,15 @@
       "author": {
         "name": "kanghyun.yang"
       }
+    },
+    {
+      "name": "skillify",
+      "source": "./plugins/skillify",
+      "description": "Turns a validated solution or a recurring failure into a permanent skill with scripts, tests, evals, and a deterministic validation gate.",
+      "version": "1.0.0",
+      "author": {
+        "name": "kanghyun.yang"
+      }
     }
   ]
 }

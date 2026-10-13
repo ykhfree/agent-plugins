@@ -12,6 +12,7 @@ Each plugin is versioned on its own and lives in its own directory under `plugin
 
 Current plugins:
 - **pr-comment**: Analyzes GitHub PR comments and categorizes them by priority
+- **skillify**: Turns a validated solution or a recurring failure into a permanent skill with scripts, tests, and evals
 
 ## Compatibility
 
@@ -35,12 +36,21 @@ Do not add a root `plugin.json` (Agent Plugins format). Codex 0.142.3 ignores it
 ├── .claude-plugin/
 │   └── marketplace.json          # Marketplace definition with all plugins
 ├── plugins/
-│   └── pr-comment/
+│   ├── pr-comment/
+│   │   ├── .claude-plugin/
+│   │   │   └── plugin.json       # Plugin metadata
+│   │   └── skills/
+│   │       └── pr-review/
+│   │           └── SKILL.md      # Skill instructions
+│   └── skillify/
 │       ├── .claude-plugin/
-│       │   └── plugin.json       # Plugin metadata
+│       │   └── plugin.json
 │       └── skills/
-│           └── pr-review/
-│               └── SKILL.md      # Skill instructions
+│           └── skillify/
+│               ├── SKILL.md
+│               ├── scripts/      # Bash scripts that the skill runs
+│               ├── tests/        # Tests of skillify itself
+│               └── evals/
 ├── AGENTS.md
 ├── CLAUDE.md                     # Imports AGENTS.md
 └── README.md
@@ -144,3 +154,13 @@ Use conventional commit messages, such as `feat: add new skill`, `fix: resolve p
 - Requires the GitHub CLI (`gh`), authenticated with `gh auth login`.
 - For a GitHub Enterprise host, the skill sets `GH_HOST`. `gh pr` has no `--hostname` option.
 - The categorization and priority rules are in `plugins/pr-comment/skills/pr-review/SKILL.md`.
+
+### skillify
+- The scripts are Bash. `scripts/validate.sh` also needs Python 3.
+- Run the tests of skillify itself from the repository root:
+  ```bash
+  plugins/skillify/skills/skillify/scripts/run_tests.sh plugins/skillify/skills/skillify
+  ```
+  The runner runs every test twice: with the current `HOME`, then with `HOME` set to a temporary directory.
+- `scripts/validate.sh` gate 9 accepts a skill only under `.claude/skills`, `.agents/skills`, `.codex/skills`, or a Claude Code or Codex plugin cache.
+  Run on the source in this repository, the gate fails by design. The installed copy passes.
