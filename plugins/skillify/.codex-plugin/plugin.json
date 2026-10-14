@@ -1,0 +1,37 @@
+{
+  "name": "skillify",
+  "version": "1.0.1",
+  "description": "Turns a validated solution or a recurring failure into a permanent skill with scripts, tests, evals, and a deterministic validation gate.",
+  "author": {
+    "name": "kanghyun.yang",
+    "url": "https://github.com/ykhfree"
+  },
+  "homepage": "https://github.com/ykhfree/agent-plugins",
+  "repository": "https://github.com/ykhfree/agent-plugins",
+  "license": "MIT",
+  "keywords": [
+    "skills",
+    "automation",
+    "recurrence-prevention",
+    "testing",
+    "validation"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Skillify",
+    "shortDescription": "Turn a validated fix into a tested, permanent skill",
+    "longDescription": "Turns a validated solution or a recurring failure into a permanent skill with scripts, tests, evals, and a deterministic validation gate.",
+    "developerName": "kanghyun.yang",
+    "category": "Developer Tools",
+    "capabilities": [
+      "Interactive",
+      "Write"
+    ],
+    "websiteURL": "https://github.com/ykhfree/agent-plugins",
+    "defaultPrompt": [
+      "Skillify this fix",
+      "이걸 스킬로 만들어",
+      "Make sure this failure cannot happen again"
+    ]
+  }
+}

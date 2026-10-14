@@ -1,0 +1,37 @@
+{
+  "name": "explain-ladder",
+  "version": "1.0.1",
+  "description": "Re-explains a topic in a new form when the user still does not understand: STE prose, then an ASCII diagram, then a step-by-step HTML page, then a narrated video.",
+  "author": {
+    "name": "kanghyun.yang",
+    "url": "https://github.com/ykhfree"
+  },
+  "homepage": "https://github.com/ykhfree/agent-plugins",
+  "repository": "https://github.com/ykhfree/agent-plugins",
+  "license": "MIT",
+  "keywords": [
+    "explanation",
+    "diagram",
+    "html",
+    "video",
+    "simplified-technical-english"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Explain Ladder",
+    "shortDescription": "Re-explain a topic as a diagram, an HTML page, or a video",
+    "longDescription": "Re-explains a topic in a new form when the user still does not understand: STE prose, then an ASCII diagram, then a step-by-step HTML page, then a narrated video.",
+    "developerName": "kanghyun.yang",
+    "category": "Education & Research",
+    "capabilities": [
+      "Interactive",
+      "Write"
+    ],
+    "websiteURL": "https://github.com/ykhfree/agent-plugins",
+    "defaultPrompt": [
+      "아직 모르겠어, 더 쉽게 설명해",
+      "그림으로 보여줘",
+      "HTML로 설명해"
+    ]
+  }
+}

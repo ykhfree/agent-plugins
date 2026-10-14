@@ -18,11 +18,13 @@ Current plugins:
 ## Compatibility
 
 One layout serves every supported agent. Tested on Claude Code 2.1.296, Codex CLI 0.142.3, and Copilot CLI 1.0.10.
+The `.codex-plugin/plugin.json` files were added on 2026-10-14 and tested on Codex CLI 0.142.3 only.
 
 | File | Claude Code | Codex | Copilot CLI |
 |------|-------------|-------|-------------|
 | `.claude-plugin/marketplace.json` | Native | Read as a legacy-compatible marketplace | Read (fallback location) |
-| `plugins/<name>/.claude-plugin/plugin.json` | Native | Read (Claude-compatible manifest) | Read (legacy manifest location) |
+| `plugins/<name>/.claude-plugin/plugin.json` | Native | Read only if `.codex-plugin/plugin.json` is missing | Read (legacy manifest location) |
+| `plugins/<name>/.codex-plugin/plugin.json` | Not read | Native: read first | Not tested |
 | `plugins/<name>/skills/<skill>/SKILL.md` | Native | Native | Native |
 
 Agents without a plugin system can install the skills directly with `npx skills add ykhfree/agent-plugins`.
@@ -39,12 +41,16 @@ Do not add a root `plugin.json` (Agent Plugins format). Codex 0.142.3 ignores it
 ├── plugins/
 │   ├── pr-comment/
 │   │   ├── .claude-plugin/
-│   │   │   └── plugin.json       # Plugin metadata
+│   │   │   └── plugin.json       # Plugin metadata for Claude Code and Copilot CLI
+│   │   ├── .codex-plugin/
+│   │   │   └── plugin.json       # Plugin metadata for Codex (adds skills and interface)
 │   │   └── skills/
 │   │       └── pr-review/
 │   │           └── SKILL.md      # Skill instructions
 │   ├── skillify/
 │   │   ├── .claude-plugin/
+│   │   │   └── plugin.json
+│   │   ├── .codex-plugin/
 │   │   │   └── plugin.json
 │   │   └── skills/
 │   │       └── skillify/
@@ -54,6 +60,8 @@ Do not add a root `plugin.json` (Agent Plugins format). Codex 0.142.3 ignores it
 │   │           └── evals/
 │   └── explain-ladder/
 │       ├── .claude-plugin/
+│       │   └── plugin.json
+│       ├── .codex-plugin/
 │       │   └── plugin.json
 │       └── skills/
 │           └── explain-ladder/
@@ -86,6 +94,7 @@ Every plugin must work in every supported agent. Follow these rules:
 1. Create the directories:
    ```bash
    mkdir -p plugins/{plugin-name}/.claude-plugin
+   mkdir -p plugins/{plugin-name}/.codex-plugin
    mkdir -p plugins/{plugin-name}/skills/{skill-name}
    ```
 2. Create `plugins/{plugin-name}/.claude-plugin/plugin.json`:
@@ -97,8 +106,36 @@ Every plugin must work in every supported agent. Follow these rules:
      "author": {"name": "Author Name"}
    }
    ```
-3. Write `plugins/{plugin-name}/skills/{skill-name}/SKILL.md` by the portability rules above.
-4. Register the plugin in `.claude-plugin/marketplace.json`:
+3. Create `plugins/{plugin-name}/.codex-plugin/plugin.json`.
+   Copy every field of the Claude manifest, then add `skills` and `interface`:
+   ```json
+   {
+     "name": "plugin-name",
+     "version": "1.0.0",
+     "description": "Plugin description",
+     "author": {"name": "Author Name"},
+     "skills": "./skills/",
+     "interface": {
+       "displayName": "Plugin Name",
+       "shortDescription": "Subtitle for compact views",
+       "longDescription": "Plugin description",
+       "developerName": "Author Name",
+       "category": "Developer Tools",
+       "capabilities": ["Interactive", "Write"],
+       "websiteURL": "https://github.com/ykhfree/agent-plugins",
+       "defaultPrompt": ["A starter prompt of about 50 characters"]
+     }
+   }
+   ```
+   - `defaultPrompt`: at most 3 strings, each 128 characters or shorter. Codex ignores extra entries and cuts longer ones.
+   - `category` and `capabilities`: use values that OpenAI plugins use. Categories include `Developer Tools`,
+     `Productivity`, and `Education & Research`. Capabilities are `Interactive`, `Read`, and `Write`.
+   - Add `privacyPolicyURL`, `termsOfServiceURL`, `logo`, `composerIcon`, or `screenshots` only when the file or page exists.
+     Put images under `./assets/`.
+   - Spec: [plugin-json-spec.md](https://github.com/openai/plugins/blob/main/.agents/skills/plugin-creator/references/plugin-json-spec.md)
+     and [Build plugins](https://developers.openai.com/codex/plugins/build/).
+4. Write `plugins/{plugin-name}/skills/{skill-name}/SKILL.md` by the portability rules above.
+5. Register the plugin in `.claude-plugin/marketplace.json`:
    ```json
    {
      "name": "plugin-name",
@@ -108,7 +145,7 @@ Every plugin must work in every supported agent. Follow these rules:
      "author": {"name": "Author Name"}
    }
    ```
-5. Add the plugin to the "Available Plugins" section of `README.md`.
+6. Add the plugin to the "Available Plugins" section of `README.md`.
 
 ## Naming
 
@@ -121,9 +158,11 @@ Example: plugin `pr-comment` with skill `pr-review` runs as `/pr-comment:pr-revi
 
 When you change a plugin, keep these in sync:
 1. `plugins/{plugin-name}/.claude-plugin/plugin.json`: `version`, `description`
-2. `.claude-plugin/marketplace.json`: the matching entry. Its `version` must equal the `plugin.json` version.
-   Claude Code and Codex read the version from `plugin.json`; Copilot CLI reads it from the marketplace entry.
-3. `README.md`: the "Available Plugins" section and the plugin documentation
+2. `plugins/{plugin-name}/.codex-plugin/plugin.json`: the same `version` and `description`, and `interface.longDescription`
+3. `.claude-plugin/marketplace.json`: the matching entry. Its `version` must equal the `plugin.json` version.
+   Claude Code reads the version from `.claude-plugin/plugin.json`, Codex from `.codex-plugin/plugin.json`,
+   and Copilot CLI from the marketplace entry.
+4. `README.md`: the "Available Plugins" section and the plugin documentation
 
 Raise the version on every change that users should receive. Claude Code and Codex keep an installed plugin at its version until the version changes.
 
@@ -136,10 +175,25 @@ Run these checks before you push:
 claude plugin validate .
 claude plugin validate ./plugins/<plugin-name>
 
-# Codex: add the local marketplace, install, then remove
+# All agents: name, version, and description must match in the three manifest files
+python3 - <<'PY'
+import json
+market = {p["name"]: p for p in json.load(open(".claude-plugin/marketplace.json"))["plugins"]}
+for name, entry in market.items():
+    claude = json.load(open(f"plugins/{name}/.claude-plugin/plugin.json"))
+    codex = json.load(open(f"plugins/{name}/.codex-plugin/plugin.json"))
+    for key in ("name", "version", "description"):
+        assert entry[key] == claude[key] == codex[key], (name, key)
+    assert codex["interface"]["longDescription"] == claude["description"], (name, "longDescription")
+print("manifests in sync")
+PY
+
+# Codex: install into a throwaway CODEX_HOME, so the real ~/.codex stays unchanged
+export CODEX_HOME="$(mktemp -d)"
 codex plugin marketplace add "$PWD"
 codex plugin add <plugin-name>@ykhfree-plugins
 codex plugin list
+rm -rf "$CODEX_HOME"; unset CODEX_HOME
 
 # Copilot CLI: add the marketplace, install, then remove
 copilot plugin marketplace add "$PWD"
@@ -150,7 +204,7 @@ copilot plugin list --json
 npx skills add "$PWD" --list
 ```
 
-If a marketplace named `ykhfree-plugins` is already added from GitHub, remove it first or test on a copy with a different marketplace `name`.
+For Copilot CLI: if a marketplace named `ykhfree-plugins` is already added from GitHub, remove it first or test on a copy with a different marketplace `name`.
 
 Copilot CLI 1.0.10 installs a plugin from a local-path marketplace with `"source": "live"` and `"enabled": false`, so its skills do not load.
 This checks only that Copilot parses the files. To check that the skills load, push first and install from `ykhfree/agent-plugins`. Then `copilot plugin list --json` must show `"enabled": true`.

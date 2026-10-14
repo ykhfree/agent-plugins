@@ -12,7 +12,7 @@
       "name": "pr-comment",
       "source": "./plugins/pr-comment",
       "description": "A tool that analyzes and categorizes all comments on GitHub PRs. Organizes unresolved comments by priority for easy review.",
-      "version": "1.3.0",
+      "version": "1.3.1",
       "author": {
         "name": "kanghyun.yang"
       }
@@ -21,7 +21,7 @@
       "name": "skillify",
       "source": "./plugins/skillify",
       "description": "Turns a validated solution or a recurring failure into a permanent skill with scripts, tests, evals, and a deterministic validation gate.",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "author": {
         "name": "kanghyun.yang"
       }
@@ -30,7 +30,7 @@
       "name": "explain-ladder",
       "source": "./plugins/explain-ladder",
       "description": "Re-explains a topic in a new form when the user still does not understand: STE prose, then an ASCII diagram, then a step-by-step HTML page, then a narrated video.",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "author": {
         "name": "kanghyun.yang"
       }
