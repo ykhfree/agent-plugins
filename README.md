@@ -12,6 +12,9 @@ Analyzes all comments on a GitHub PR and organizes unresolved items by priority.
 ### Skillify (`skillify`)
 Turns a validated solution or a recurring failure into a permanent skill with scripts, tests, evals, and a deterministic validation gate.
 
+### Explain Ladder (`explain-ladder`)
+Re-explains a topic in a new form when the user still does not understand: STE prose, then an ASCII diagram, then a step-by-step HTML page, then a narrated video.
+
 ## Installation
 
 The marketplace name is `ykhfree-plugins`. Each agent installs a plugin as `<plugin>@ykhfree-plugins`.
@@ -114,6 +117,34 @@ Bundled scripts:
 - Bash
 - Python 3 (`scripts/validate.sh` uses it to parse `SKILL.md` and the evals)
 - `jq`, if you add a hook to a JSON settings file
+
+### Explain Ladder
+
+#### Usage
+
+Ask a question first. If the answer is still unclear, say so, for example "아직 모르겠어", "더 쉽게 설명해", or "still not clear".
+The agent picks the `explain-ladder` skill from its description and climbs one level.
+To jump to a level, name it: "그림으로 보여줘", "HTML로 설명해", or "영상으로 설명해".
+
+In Claude Code, you can also call it directly:
+```bash
+/explain-ladder:explain-ladder
+```
+
+#### Levels
+
+| Level | Form | Rules |
+|---|---|---|
+| 1 | STE prose | Answer first, one point per sentence, one term per concept |
+| 2 | ASCII diagram | ASCII symbols only, 72 columns or narrower, 3 to 9 boxes, checked by `scripts/check_diagram.py` |
+| 3 | Single-file HTML page | One step per screen, previous/next buttons, arrow keys, step counter |
+| 4 | Narrated video | Offered only; built on request with `scripts/video/build.py` (Manim, macOS `say`, ffmpeg) |
+
+#### Requirements
+
+- Python 3 for `scripts/check_diagram.py` (standard library only)
+- Level 4 only: macOS, Homebrew `ffmpeg`, `cairo`, `pango`, `pkg-config`, and a Python 3.13 venv with Manim 0.22.0.
+  `skills/explain-ladder/video.md` has the setup commands.
 
 ## Contributing
 

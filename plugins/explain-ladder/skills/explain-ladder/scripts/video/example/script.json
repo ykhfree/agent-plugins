@@ -1,0 +1,20 @@
+{
+  "title": "웹 요청 흐름",
+  "scenes": [
+    {
+      "id": "S1_Parts",
+      "narration": "웹 요청이 어떻게 오가는지 같이 볼게요. 등장하는 건 브라우저, 서버, 데이터베이스, 이렇게 세 가지예요.",
+      "visual": "Three boxes appear left to right: 브라우저, 서버, 데이터베이스."
+    },
+    {
+      "id": "S2_Request",
+      "narration": "먼저 브라우저가 서버에 요청을 보내요. 서버는 그 요청을 받고, 데이터베이스에 데이터를 조회해요.",
+      "visual": "Arrow 요청 from 브라우저 to 서버, then arrow 조회 from 서버 to 데이터베이스. The active box is highlighted."
+    },
+    {
+      "id": "S3_Response",
+      "narration": "데이터베이스가 데이터를 돌려주면, 서버는 그 데이터로 응답을 만들어서 브라우저에 보내 줘요.",
+      "visual": "Arrows go back right to left: 데이터, then 응답. Finally all boxes and arrows show at once."
+    }
+  ]
+}

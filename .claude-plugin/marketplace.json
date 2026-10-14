@@ -25,6 +25,15 @@
       "author": {
         "name": "kanghyun.yang"
       }
+    },
+    {
+      "name": "explain-ladder",
+      "source": "./plugins/explain-ladder",
+      "description": "Re-explains a topic in a new form when the user still does not understand: STE prose, then an ASCII diagram, then a step-by-step HTML page, then a narrated video.",
+      "version": "1.0.0",
+      "author": {
+        "name": "kanghyun.yang"
+      }
     }
   ]
 }

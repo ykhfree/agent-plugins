@@ -1,0 +1,19 @@
+{
+  "name": "explain-ladder",
+  "version": "1.0.0",
+  "description": "Re-explains a topic in a new form when the user still does not understand: STE prose, then an ASCII diagram, then a step-by-step HTML page, then a narrated video.",
+  "author": {
+    "name": "kanghyun.yang",
+    "url": "https://github.com/ykhfree"
+  },
+  "homepage": "https://github.com/ykhfree/agent-plugins",
+  "repository": "https://github.com/ykhfree/agent-plugins",
+  "license": "MIT",
+  "keywords": [
+    "explanation",
+    "diagram",
+    "html",
+    "video",
+    "simplified-technical-english"
+  ]
+}

@@ -13,6 +13,7 @@ Each plugin is versioned on its own and lives in its own directory under `plugin
 Current plugins:
 - **pr-comment**: Analyzes GitHub PR comments and categorizes them by priority
 - **skillify**: Turns a validated solution or a recurring failure into a permanent skill with scripts, tests, and evals
+- **explain-ladder**: Re-explains a topic in a new form (prose, ASCII diagram, HTML page, video) when the user still does not understand
 
 ## Compatibility
 
@@ -42,14 +43,24 @@ Do not add a root `plugin.json` (Agent Plugins format). Codex 0.142.3 ignores it
 │   │   └── skills/
 │   │       └── pr-review/
 │   │           └── SKILL.md      # Skill instructions
-│   └── skillify/
+│   ├── skillify/
+│   │   ├── .claude-plugin/
+│   │   │   └── plugin.json
+│   │   └── skills/
+│   │       └── skillify/
+│   │           ├── SKILL.md
+│   │           ├── scripts/      # Bash scripts that the skill runs
+│   │           ├── tests/        # Tests of skillify itself
+│   │           └── evals/
+│   └── explain-ladder/
 │       ├── .claude-plugin/
 │       │   └── plugin.json
 │       └── skills/
-│           └── skillify/
+│           └── explain-ladder/
 │               ├── SKILL.md
-│               ├── scripts/      # Bash scripts that the skill runs
-│               ├── tests/        # Tests of skillify itself
+│               ├── video.md      # Level 4 procedure
+│               ├── scripts/      # check_diagram.py, video/ (build.py + pytest suite)
+│               ├── tests/        # Shell tests that run_tests.sh finds
 │               └── evals/
 ├── AGENTS.md
 ├── CLAUDE.md                     # Imports AGENTS.md
@@ -164,3 +175,15 @@ Use conventional commit messages, such as `feat: add new skill`, `fix: resolve p
   The runner runs every test twice: with the current `HOME`, then with `HOME` set to a temporary directory.
 - `scripts/validate.sh` gate 9 accepts a skill only under `.claude/skills`, `.agents/skills`, `.codex/skills`, or a Claude Code or Codex plugin cache.
   Run on the source in this repository, the gate fails by design. The installed copy passes.
+
+### explain-ladder
+- `scripts/check_diagram.py` needs only Python 3. Level 4 (`scripts/video/`) needs macOS and the venv in `skills/explain-ladder/video.md`.
+- Run the tests with the skillify runner from the repository root.
+  The video tests find the venv Python through `HOME`, and the runner's second pass changes `HOME`.
+  So set `EXPLAIN_VIDEO_PYTHON` first:
+  ```bash
+  EXPLAIN_VIDEO_PYTHON=~/.venvs/explain-video/bin/python \
+    plugins/skillify/skills/skillify/scripts/run_tests.sh plugins/explain-ladder/skills/explain-ladder
+  ```
+  If the venv Python is missing, the video tests fail. They do not skip.
+- To pass gate 9 of `validate.sh`, copy the skill to `<temp dir>/.claude/skills/explain-ladder` and validate the copy.
