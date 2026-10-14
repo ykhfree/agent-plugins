@@ -1,0 +1,44 @@
+{
+  "name": "ykhfree-plugins",
+  "interface": {
+    "displayName": "ykhfree plugins"
+  },
+  "plugins": [
+    {
+      "name": "pr-comment",
+      "source": {
+        "source": "local",
+        "path": "./plugins/pr-comment"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "skillify",
+      "source": {
+        "source": "local",
+        "path": "./plugins/skillify"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "explain-ladder",
+      "source": {
+        "source": "local",
+        "path": "./plugins/explain-ladder"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Education & Research"
+    }
+  ]
+}

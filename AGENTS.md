@@ -18,11 +18,12 @@ Current plugins:
 ## Compatibility
 
 One layout serves every supported agent. Tested on Claude Code 2.1.296, Codex CLI 0.142.3, and Copilot CLI 1.0.10.
-The `.codex-plugin/plugin.json` files were added on 2026-10-14 and tested on Codex CLI 0.142.3 only.
+The `.codex-plugin/plugin.json` files and `.agents/plugins/marketplace.json` were added on 2026-10-14 and tested on Codex CLI 0.142.3 only.
 
 | File | Claude Code | Codex | Copilot CLI |
 |------|-------------|-------|-------------|
-| `.claude-plugin/marketplace.json` | Native | Read as a legacy-compatible marketplace | Read (fallback location) |
+| `.claude-plugin/marketplace.json` | Native | Read only if `.agents/plugins/marketplace.json` is missing | Read (fallback location) |
+| `.agents/plugins/marketplace.json` | Not read | Native: read first | Not tested |
 | `plugins/<name>/.claude-plugin/plugin.json` | Native | Read only if `.codex-plugin/plugin.json` is missing | Read (legacy manifest location) |
 | `plugins/<name>/.codex-plugin/plugin.json` | Not read | Native: read first | Not tested |
 | `plugins/<name>/skills/<skill>/SKILL.md` | Native | Native | Native |
@@ -37,7 +38,10 @@ Do not add a root `plugin.json` (Agent Plugins format). Codex 0.142.3 ignores it
 ```
 /
 ├── .claude-plugin/
-│   └── marketplace.json          # Marketplace definition with all plugins
+│   └── marketplace.json          # Marketplace for Claude Code and Copilot CLI
+├── .agents/
+│   └── plugins/
+│       └── marketplace.json      # Marketplace for Codex (same plugins, adds policy and category)
 ├── plugins/
 │   ├── pr-comment/
 │   │   ├── .claude-plugin/
@@ -145,7 +149,18 @@ Every plugin must work in every supported agent. Follow these rules:
      "author": {"name": "Author Name"}
    }
    ```
-6. Add the plugin to the "Available Plugins" section of `README.md`.
+6. Register the plugin in `.agents/plugins/marketplace.json` for Codex. Use the same order as step 5:
+   ```json
+   {
+     "name": "plugin-name",
+     "source": {"source": "local", "path": "./plugins/{plugin-name}"},
+     "policy": {"installation": "AVAILABLE", "authentication": "ON_INSTALL"},
+     "category": "Developer Tools"
+   }
+   ```
+   `category` must equal `interface.category` in `.codex-plugin/plugin.json`.
+   If this file exists, Codex ignores `.claude-plugin/marketplace.json`, so a plugin missing here cannot be installed in Codex.
+7. Add the plugin to the "Available Plugins" section of `README.md`.
 
 ## Naming
 
@@ -162,7 +177,9 @@ When you change a plugin, keep these in sync:
 3. `.claude-plugin/marketplace.json`: the matching entry. Its `version` must equal the `plugin.json` version.
    Claude Code reads the version from `.claude-plugin/plugin.json`, Codex from `.codex-plugin/plugin.json`,
    and Copilot CLI from the marketplace entry.
-4. `README.md`: the "Available Plugins" section and the plugin documentation
+4. `.agents/plugins/marketplace.json`: the same plugins in the same order, with `category` equal to the Codex manifest.
+   This file has no `version` field.
+5. `README.md`: the "Available Plugins" section and the plugin documentation
 
 Raise the version on every change that users should receive. Claude Code and Codex keep an installed plugin at its version until the version changes.
 
@@ -175,16 +192,20 @@ Run these checks before you push:
 claude plugin validate .
 claude plugin validate ./plugins/<plugin-name>
 
-# All agents: name, version, and description must match in the three manifest files
+# All agents: the two marketplaces and the plugin manifests must agree
 python3 - <<'PY'
 import json
 market = {p["name"]: p for p in json.load(open(".claude-plugin/marketplace.json"))["plugins"]}
+codex_market = {p["name"]: p for p in json.load(open(".agents/plugins/marketplace.json"))["plugins"]}
+assert list(market) == list(codex_market), ("marketplace plugin lists differ", list(market), list(codex_market))
 for name, entry in market.items():
     claude = json.load(open(f"plugins/{name}/.claude-plugin/plugin.json"))
     codex = json.load(open(f"plugins/{name}/.codex-plugin/plugin.json"))
     for key in ("name", "version", "description"):
         assert entry[key] == claude[key] == codex[key], (name, key)
     assert codex["interface"]["longDescription"] == claude["description"], (name, "longDescription")
+    assert codex_market[name]["source"]["path"] == entry["source"], (name, "source path")
+    assert codex_market[name]["category"] == codex["interface"]["category"], (name, "category")
 print("manifests in sync")
 PY
 
