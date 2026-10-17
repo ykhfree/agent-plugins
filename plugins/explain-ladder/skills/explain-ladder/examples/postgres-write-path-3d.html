@@ -1,0 +1,977 @@
+<!-- explain-ladder level 3, 3D variant: reference implementation (see 3d.md).
+     Written for the Claude Code Artifact tool, which adds the doctype, head, and body at publish time.
+     Without that tool, wrap the file in a full HTML document. Copy the structure, not the content. -->
+<title>Postgres 쓰기 경로</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap">
+<style>
+/* Layout: a full-bleed 3D stage beside one narrow step panel; on phones the panel stacks under the stage. */
+:root {
+  --bg: #E7EBEF;
+  --stage: #DAE0E6;
+  --surface: #F5F7F9;
+  --fg: #16202A;
+  --muted: #566272;
+  --line: #C0C9D3;
+  --hl: #ECE7FB;
+  --mem: #15807C;
+  --disk: #87755D;
+  --wal: #6748D2;
+  --dirty: #D45A22;
+  --crash: #C7302F;
+  --font-display: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0E1318; --stage: #111920; --surface: #151D25; --fg: #E2E8EE; --muted: #91A0B0;
+    --line: #2A3643; --hl: #251F3D; --mem: #3DBAB5; --disk: #B09C82; --wal: #9E88FF;
+    --dirty: #FF8648; --crash: #FF5E5B;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0E1318; --stage: #111920; --surface: #151D25; --fg: #E2E8EE; --muted: #91A0B0;
+  --line: #2A3643; --hl: #251F3D; --mem: #3DBAB5; --disk: #B09C82; --wal: #9E88FF;
+  --dirty: #FF8648; --crash: #FF5E5B;
+  color-scheme: dark;
+}
+
+html, body { height: 100%; }
+[hidden] { display: none !important; }
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font: 15px/1.65 var(--font-body);
+}
+.app {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 400px);
+  height: 100%;
+}
+
+/* Stage */
+.stage {
+  position: relative;
+  min-height: 0;
+  overflow: hidden;
+  background: radial-gradient(120% 90% at 30% 15%, var(--surface) 0%, var(--stage) 62%);
+}
+.stage .gl { display: block; width: 100%; height: 100%; touch-action: none; }
+.labels { position: absolute; inset: 0; pointer-events: none; }
+.stage-msg {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding-inline: max(16px, env(safe-area-inset-left, 0px)) max(16px, env(safe-area-inset-right, 0px));
+  color: var(--muted);
+  text-align: center;
+}
+.stage-tools {
+  position: absolute;
+  top: 14px;
+  right: max(16px, env(safe-area-inset-right, 0px));
+}
+.stage-hint {
+  position: absolute;
+  bottom: 12px;
+  left: max(16px, env(safe-area-inset-left, 0px));
+  right: max(16px, env(safe-area-inset-right, 0px));
+  margin: 0;
+  font: 12px/1.4 var(--font-body);
+  color: var(--muted);
+  pointer-events: none;
+}
+.hint-touch { display: none; }
+@media (pointer: coarse) {
+  .hint-mouse { display: none; }
+  .hint-touch { display: inline; }
+}
+
+/* 3D labels (CSS2D) */
+.tag {
+  font: 600 12px/1.3 var(--font-display);
+  color: var(--fg);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 3px 8px;
+  white-space: nowrap;
+  transition: opacity 0.35s;
+}
+.tag.dim { opacity: 0.25; }
+.tag .detail {
+  margin-top: 3px;
+  font: 400 11px/1.4 var(--font-mono);
+  color: var(--muted);
+}
+.tag.layer {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+.tag.layer small { display: block; font-weight: 400; font-size: 11px; }
+.tag.pin {
+  font: 500 11px/1.2 var(--font-mono);
+  padding: 2px 6px;
+  border-color: var(--fg);
+}
+.tag.crash {
+  color: var(--crash);
+  border-color: var(--crash);
+  font-size: 13px;
+}
+.tag.badge {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border-radius: 50%;
+  border: 2px solid var(--c);
+  font: 600 12px/1 var(--font-mono);
+}
+
+/* Panel */
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-width: 0;
+  overflow-y: auto;
+  background: var(--surface);
+  border-left: 1px solid var(--line);
+  padding-block: 28px 20px;
+  padding-left: max(24px, env(safe-area-inset-left, 0px));
+  padding-right: max(24px, env(safe-area-inset-right, 0px));
+}
+.eyebrow {
+  margin: 0;
+  font: 500 12px/1.4 var(--font-display);
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+.progress { display: flex; align-items: center; gap: 12px; }
+.counter {
+  font: 500 13px/1 var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+  min-width: 4.5em;
+}
+.dots { display: flex; gap: 4px; flex: 1; }
+.dots button {
+  flex: 1;
+  height: 18px;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+.dots button::before {
+  content: "";
+  display: block;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--line);
+}
+.dots button.done::before { background: var(--muted); }
+.dots button[aria-current="step"]::before { background: var(--fg); height: 6px; }
+.step-text { display: flex; flex-direction: column; gap: 10px; }
+.step-text h1 {
+  margin: 0;
+  font: 600 21px/1.4 var(--font-display);
+  text-wrap: balance;
+}
+.step-text p { margin: 0; max-width: 34em; }
+.code {
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  font: 400 12.5px/1.55 var(--font-mono);
+  white-space: pre-wrap;
+  overflow-x: auto;
+}
+.note { font-size: 13px; line-height: 1.6; color: var(--muted); }
+.note b { font-weight: 600; color: var(--fg); margin-right: 6px; }
+.paths { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; }
+.paths li { display: flex; gap: 10px; align-items: baseline; font-size: 13.5px; line-height: 1.5; }
+.paths .num {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid var(--c);
+  font: 600 11px/1 var(--font-mono);
+  transform: translateY(4px);
+}
+.readout { border-top: 1px solid var(--line); }
+.readout dl { margin: 0; display: flex; flex-direction: column; }
+.readout h2 {
+  margin: 0;
+  padding: 10px 0 6px;
+  font: 500 12px/1.4 var(--font-display);
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+.readout .row {
+  display: grid;
+  grid-template-columns: 7.5em minmax(0, 1fr);
+  gap: 10px;
+  padding: 5px 8px;
+  border-radius: 4px;
+  transition: background 0.3s;
+}
+.readout dt { font-size: 12.5px; color: var(--muted); }
+.readout dd { margin: 0; font: 400 12px/1.6 var(--font-mono); font-variant-numeric: tabular-nums; }
+.readout .row.changed { background: var(--hl); }
+.readout .row.changed dd { font-weight: 500; }
+.legend {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.legend li { display: flex; align-items: center; gap: 6px; }
+.legend i { width: 10px; height: 10px; border-radius: 2px; background: var(--c); }
+.nav { display: flex; gap: 8px; margin-top: auto; }
+.btn {
+  font: 500 14px/1 var(--font-display);
+  padding: 11px 16px;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--fg);
+  cursor: pointer;
+}
+.btn:hover { border-color: var(--muted); }
+.btn.primary { background: var(--fg); border-color: var(--fg); color: var(--surface); flex: 1; }
+.btn:disabled { opacity: 0.4; cursor: default; }
+.btn.small { font-size: 12.5px; padding: 7px 11px; }
+button:focus-visible { outline: 2px solid var(--wal); outline-offset: 2px; }
+.foot { margin: 0; font-size: 12px; color: var(--muted); }
+
+@media (max-width: 860px) {
+  html, body { height: auto; }
+  .app { grid-template-columns: minmax(0, 1fr); height: auto; }
+  .stage { height: 58vh; height: 58svh; min-height: 320px; }
+  .panel { border-left: 0; border-top: 1px solid var(--line); overflow: visible; padding-block: 22px 28px; }
+  .panel { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tag, .readout .row { transition: none; }
+}
+</style>
+
+<div class="app">
+  <section class="stage" id="stage" aria-label="Postgres 쓰기 경로 3D 장면">
+    <div class="stage-msg" id="stage-msg" hidden></div>
+    <div class="stage-tools">
+      <button class="btn small" id="btn-view" type="button">시점 맞추기</button>
+    </div>
+    <p class="stage-hint">
+      <span class="hint-mouse">드래그: 회전 · 휠: 확대 · 오른쪽 드래그: 이동</span>
+      <span class="hint-touch">한 손가락: 회전 · 두 손가락: 확대와 이동</span>
+    </p>
+  </section>
+
+  <aside class="panel">
+    <p class="eyebrow">Postgres 내부 · UPDATE 한 건의 쓰기 경로</p>
+    <div class="progress">
+      <span class="counter" id="counter">1 / 10</span>
+      <div class="dots" id="dots" role="group" aria-label="단계 선택"></div>
+    </div>
+    <div class="step-text" aria-live="polite">
+      <h1 id="step-title"></h1>
+      <p id="step-body"></p>
+      <pre class="code" id="step-code" hidden></pre>
+      <p class="note" id="step-note" hidden><b>참고</b><span></span></p>
+      <ol class="paths" id="step-paths" hidden></ol>
+    </div>
+    <section class="readout">
+      <h2>현재 상태</h2>
+      <dl id="readout"></dl>
+    </section>
+    <ul class="legend">
+      <li style="--c: var(--mem)"><i></i>clean page</li>
+      <li style="--c: var(--dirty)"><i></i>dirty page</li>
+      <li style="--c: var(--wal)"><i></i>WAL 레코드</li>
+      <li style="--c: var(--disk)"><i></i>디스크의 page</li>
+    </ul>
+    <div class="nav">
+      <button class="btn" id="prev" type="button">이전</button>
+      <button class="btn" id="replay" type="button">다시 재생</button>
+      <button class="btn primary" id="next" type="button">다음</button>
+    </div>
+    <p class="foot">← → 키로도 넘길 수 있습니다. LSN, 파일 경로, balance 값은 설명용 예시입니다.</p>
+  </aside>
+</div>
+
+<script>
+(() => {
+  // Every part a step can focus. The 3D scene and the panel use the same ids.
+  const ALL = ['client', 'backend', 'sbuf', 'walbuf', 'ckpt', 'datafile', 'walfile'];
+
+  // End state of the world after each step. A step animates from the previous end state to its own.
+  const S = o => Object.assign({ client: 'idle', slot: 'empty', walBuf: 0, walFile: 0, block: '100', down: false, cold: false }, o);
+
+  const STEPS = [
+    {
+      id: 'overview',
+      title: '전체 구조: 메모리와 디스크',
+      body: '위층 메모리는 빠르지만, 서버가 꺼지면 내용이 사라집니다. 아래층 디스크는 느리지만, 서버가 꺼져도 내용이 남습니다.',
+      note: '이 페이지는 accounts 테이블에서 id = 42인 row의 balance를 100에서 70으로 바꾸는 UPDATE 한 건을 따라갑니다.',
+      focus: ALL, paths: [], details: false,
+      cam: { tgt: [-0.6, 1.3, 0], az: -8, el: 30, d: 31 },
+      state: S({}),
+    },
+    {
+      id: 'query',
+      title: '클라이언트가 UPDATE를 보냅니다',
+      body: '클라이언트가 트랜잭션을 열고 UPDATE 문을 보냅니다. 연결 하나는 백엔드 프로세스 하나가 맡습니다.',
+      code: 'BEGIN;\nUPDATE accounts SET balance = 70 WHERE id = 42;',
+      focus: ['client', 'backend'], paths: [1],
+      cam: { tgt: [-4.9, 2.9, 0.2], az: -18, el: 22, d: 12 },
+      state: S({ client: 'sent' }),
+    },
+    {
+      id: 'read',
+      title: '데이터 파일에서 page를 읽습니다',
+      body: 'id = 42 row는 데이터 파일의 블록 7 (8 kB page)에 있습니다. 블록 7이 shared buffers에 없으므로, 백엔드 프로세스가 이 page를 빈 buffer로 읽어 옵니다.',
+      note: '블록 7이 이미 shared buffers에 있으면, 디스크를 읽지 않습니다 (buffer hit).',
+      focus: ['backend', 'sbuf', 'datafile'], paths: [2],
+      cam: { tgt: [1.4, 1.5, 0.35], az: 34, el: 18, d: 13 },
+      state: S({ client: 'sent', slot: 'clean100' }),
+    },
+    {
+      id: 'dirty',
+      title: '메모리에서 row를 바꿉니다',
+      body: '백엔드 프로세스가 shared buffers의 블록 7에 새 row 버전 (balance = 70)을 씁니다. 디스크의 블록 7은 아직 balance = 100이므로, 이 page는 dirty 상태가 됩니다.',
+      note: 'Postgres는 row를 덮어쓰지 않습니다. 옛 버전에 삭제 표시를 하고, 새 버전을 추가합니다 (MVCC).',
+      focus: ['backend', 'sbuf'], paths: [3],
+      cam: { tgt: [-0.2, 2.8, 0.3], az: 8, el: 36, d: 13 },
+      state: S({ client: 'sent', slot: 'dirty70' }),
+    },
+    {
+      id: 'wal',
+      title: '같은 변경을 WAL 레코드로 남깁니다',
+      body: '백엔드 프로세스가 같은 변경을 WAL 레코드로 만들어 WAL buffers에 넣습니다. 이 레코드도 아직 메모리에 있습니다.',
+      note: 'checkpoint 뒤에 어떤 page를 처음 바꾸면, WAL 레코드에 8 kB page 전체 이미지도 들어갑니다 (full_page_writes = on, 기본값).',
+      focus: ['backend', 'walbuf'], paths: [4],
+      cam: { tgt: [1.2, 2.9, 0.3], az: 4, el: 34, d: 15 },
+      state: S({ client: 'sent', slot: 'dirty70', walBuf: 1 }),
+    },
+    {
+      id: 'commit',
+      title: 'COMMIT: WAL만 디스크에 씁니다',
+      body: '클라이언트가 COMMIT을 보내면, 백엔드 프로세스가 WAL 레코드를 WAL 파일에 쓰고 fsync로 디스크에 확정합니다. 그다음에야 클라이언트가 COMMIT 응답을 받습니다.',
+      code: 'COMMIT;',
+      note: '블록 7의 dirty page는 아직 메모리에만 있습니다. 이 동작은 synchronous_commit = on (기본값)일 때의 동작입니다.',
+      focus: ['client', 'backend', 'walbuf', 'walfile'], paths: [1, 5],
+      cam: { tgt: [-0.6, 1.5, 0.2], az: 6, el: 26, d: 30 },
+      state: S({ client: 'committed', slot: 'dirty70', walFile: 2 }),
+    },
+    {
+      id: 'crash',
+      title: '장애: checkpoint 전에 서버가 꺼지면',
+      body: '서버 전원이 꺼지면, 메모리에 있던 dirty page (balance = 70)는 사라집니다. 하지만 WAL 파일에는 이 변경의 기록이 남아 있습니다.',
+      note: '디스크의 블록 7은 아직 balance = 100입니다.',
+      focus: ['sbuf', 'walfile', 'datafile'], paths: [],
+      cam: { tgt: [1.2, 1.4, 0], az: 0, el: 28, d: 22 },
+      state: S({ client: 'committed', walFile: 2, down: true, cold: true }),
+    },
+    {
+      id: 'redo',
+      title: '복구: WAL을 다시 적용합니다',
+      body: 'Postgres가 다시 시작하면, 마지막 checkpoint의 REDO 위치부터 WAL 파일을 읽습니다. WAL 레코드를 다시 적용해서 (redo) 블록 7을 balance = 70으로 되살립니다.',
+      note: '그래서 COMMIT 응답을 받은 변경은 장애가 나도 사라지지 않습니다.',
+      focus: ['sbuf', 'walfile'], paths: [7],
+      cam: { tgt: [3.4, 1.5, 0.4], az: 28, el: 18, d: 14 },
+      state: S({ client: 'committed', slot: 'dirty70', walFile: 2, cold: true }),
+    },
+    {
+      id: 'checkpoint',
+      title: 'checkpoint: dirty page를 데이터 파일에 씁니다',
+      body: 'checkpoint가 실행되면, checkpointer가 dirty page를 데이터 파일에 씁니다. 이제 디스크의 블록 7도 balance = 70입니다.',
+      note: 'checkpoint는 기본값으로 5분마다 (checkpoint_timeout), 또는 WAL이 많이 쌓이면 (max_wal_size = 1 GB) 실행됩니다.',
+      focus: ['ckpt', 'sbuf', 'datafile'], paths: [6],
+      cam: { tgt: [1.4, 1.5, -0.4], az: -34, el: 20, d: 14 },
+      state: S({ client: 'committed', slot: 'clean70', walFile: 2, block: '70', cold: true }),
+    },
+    {
+      id: 'summary',
+      title: '요약: WAL이 먼저 디스크에 갑니다',
+      body: 'COMMIT 때는 WAL 레코드만 디스크에 갑니다. data page는 나중에 checkpoint 때 디스크에 갑니다.',
+      note: '그래서 COMMIT은 작은 WAL 쓰기만 기다리고, 장애가 나도 COMMIT된 변경은 WAL로 되살아납니다.',
+      focus: ALL, paths: [1, 2, 3, 4, 5, 6, 7], details: false,
+      cam: { tgt: [-0.6, 1.3, 0], az: -14, el: 32, d: 31 },
+      state: S({ client: 'committed', slot: 'clean70', walFile: 2, block: '70', cold: true }),
+    },
+  ];
+
+  // Numbered arrows. The summary list and the 3D badges share these numbers and colors.
+  // at: where the badge sits on the curve (0..1), when the midpoint is covered by a label.
+  const PATHS = [
+    { n: 1, token: 'fg', text: '클라이언트 → 백엔드 프로세스: UPDATE와 COMMIT' },
+    { n: 2, token: 'mem', at: 0.3, text: '데이터 파일 → shared buffers: page 읽기' },
+    { n: 3, token: 'dirty', text: '백엔드 프로세스 → shared buffers: row 수정 (dirty)' },
+    { n: 4, token: 'wal', text: '백엔드 프로세스 → WAL buffers: WAL 레코드' },
+    { n: 5, token: 'wal', text: 'WAL buffers → WAL 파일: COMMIT 때 fsync' },
+    { n: 6, token: 'dirty', text: 'shared buffers → 데이터 파일: checkpoint 때 쓰기' },
+    { n: 7, token: 'wal', text: 'WAL 파일 → shared buffers: 복구 때만 (redo)' },
+  ];
+
+  const ROWS = [
+    ['client', '클라이언트'],
+    ['sbuf', 'shared buffers'],
+    ['walbuf', 'WAL buffers'],
+    ['walfile', 'WAL 파일'],
+    ['datafile', '데이터 파일'],
+  ];
+
+  // One short description per part. The panel readout and the 3D labels both show it.
+  function describe(s) {
+    const page = { clean100: ['100', 'clean'], dirty70: ['70', 'dirty'], clean70: ['70', 'clean'] }[s.slot];
+    return {
+      client: { idle: '아직 보내지 않음', sent: 'UPDATE 보냄 · 트랜잭션 진행 중', committed: 'COMMIT 응답 받음' }[s.client],
+      sbuf: s.down ? '서버 꺼짐 · 내용 사라짐' : page ? `블록 7 · balance ${page[0]} · ${page[1]}` : '블록 7 없음',
+      walbuf: s.down ? '서버 꺼짐 · 내용 사라짐' : s.walBuf ? 'UPDATE 레코드 · LSN 0/3000148' : '이 트랜잭션의 레코드 없음',
+      walfile: s.walFile ? 'UPDATE, COMMIT 레코드 · fsync 완료' : '이 트랜잭션의 레코드 없음',
+      datafile: `블록 7 · balance ${s.block}`,
+    };
+  }
+
+  const $ = id => document.getElementById(id);
+  const last = STEPS.length - 1;
+  const m = /^#s(\d+)$/.exec(location.hash);
+  let cur = m ? Math.min(last, Math.max(0, Number(m[1]) - 1)) : 0;
+
+  STEPS.forEach((s, i) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.setAttribute('aria-label', `${i + 1}단계: ${s.title}`);
+    b.addEventListener('click', () => go(i));
+    $('dots').append(b);
+  });
+  const rowEls = {};
+  for (const [k, label] of ROWS) {
+    const row = document.createElement('div');
+    row.className = 'row';
+    row.innerHTML = `<dt>${label}</dt><dd></dd>`;
+    $('readout').append(row);
+    rowEls[k] = row;
+  }
+  for (const p of PATHS) {
+    const li = document.createElement('li');
+    li.innerHTML = `<span class="num" style="--c: var(--${p.token})">${p.n}</span><span>${p.text}</span>`;
+    $('step-paths').append(li);
+  }
+
+  function render(i, animate) {
+    cur = i;
+    const s = STEPS[i];
+    $('counter').textContent = `${i + 1} / ${STEPS.length}`;
+    $('step-title').textContent = s.title;
+    $('step-body').textContent = s.body;
+    $('step-code').hidden = !s.code;
+    $('step-code').textContent = s.code || '';
+    $('step-note').hidden = !s.note;
+    $('step-note').querySelector('span').textContent = s.note || '';
+    $('step-paths').hidden = s.id !== 'summary';
+
+    const now = describe(s.state);
+    const before = describe(STEPS[Math.max(0, i - 1)].state);
+    for (const [k] of ROWS) {
+      rowEls[k].querySelector('dd').textContent = now[k];
+      rowEls[k].classList.toggle('changed', i > 0 && now[k] !== before[k]);
+    }
+    [...$('dots').children].forEach((b, j) => {
+      b.classList.toggle('done', j < i);
+      if (j === i) b.setAttribute('aria-current', 'step');
+      else b.removeAttribute('aria-current');
+    });
+    $('prev').disabled = i === 0;
+    $('next').disabled = i === last;
+    try { history.replaceState(null, '', `#s${i + 1}`); } catch (e) { /* sandboxed frame */ }
+    if (window.PGW_STAGE) window.PGW_STAGE.show(i, animate);
+  }
+  const go = i => { if (i >= 0 && i <= last) render(i, true); };
+
+  $('prev').addEventListener('click', () => go(cur - 1));
+  $('next').addEventListener('click', () => go(cur + 1));
+  $('replay').addEventListener('click', () => render(cur, true));
+  $('btn-view').addEventListener('click', () => window.PGW_STAGE && window.PGW_STAGE.reframe());
+  document.addEventListener('keydown', e => {
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    if (e.key === 'ArrowRight') { go(cur + 1); e.preventDefault(); }
+    if (e.key === 'ArrowLeft') { go(cur - 1); e.preventDefault(); }
+  });
+
+  const fail = msg => { $('stage-msg').textContent = msg; $('stage-msg').hidden = false; };
+  // If the 3D module never loads (blocked CDN, no WebGL), say so. The panel still works.
+  setTimeout(() => {
+    if (!window.PGW_STAGE) fail('3D 장면을 불러오지 못했습니다. 단계 설명과 현재 상태는 패널에서 그대로 볼 수 있습니다.');
+  }, 8000);
+
+  window.PGW = { STEPS, PATHS, ALL, describe, fail, cur: () => cur };
+  render(cur, false);
+})();
+</script>
+
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+
+const { STEPS, PATHS, describe } = window.PGW;
+const stage = document.getElementById('stage');
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const V = (x, y, z) => new THREE.Vector3(x, y, z);
+const ease = k => (k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2);
+
+// ── layout constants (world units) ──
+const MEM_Y = 2.7;                              // top of the memory layer
+const SLOT_X = 2.22, ROW_Z = 0.35;              // the buffer that will hold block 7, directly above it
+const colX = c => SLOT_X - (3 - c) * 0.88;      // shared buffers grid: 4 columns x 3 rows
+const rowZ = r => ROW_Z + (r - 1) * 0.88;
+const blockX = i => SLOT_X - (7 - i) * 0.44;    // data file: blocks 0..7, block 7 under the slot
+const walX = i => 4.0 + i * 0.44;               // WAL buffers and WAL file share x positions
+const BACKEND = V(-2.9, MEM_Y, 0.2);
+const CKPT = V(0.9, MEM_Y, -1.95);
+const CLIENT = V(-7.0, MEM_Y, 0.2);
+const TARGET = 7;                               // index of the target slot (row 1, column 3)
+const FILLED = [0, 1, 3, 4, 6, 8, 9, 10];       // slots that hold other pages before the crash
+
+function boot() {
+  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  renderer.domElement.className = 'gl';
+  stage.prepend(renderer.domElement);
+  const overlay = new CSS2DRenderer();
+  overlay.domElement.className = 'labels';
+  stage.append(overlay.domElement);
+
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(30, 1, 0.1, 200);
+  const controls = new OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true;
+  controls.minDistance = 4;
+  controls.maxDistance = 45;
+  controls.maxPolarAngle = Math.PI * 0.495;
+
+  scene.add(new THREE.HemisphereLight(0xffffff, 0x8a909a, 2.4));
+  const sun = new THREE.DirectionalLight(0xffffff, 1.5);
+  sun.position.set(-4, 10, 7);
+  scene.add(sun);
+
+  // ── theme tokens → materials ──
+  const T = {};
+  const TOKENS = ['stage', 'fg', 'muted', 'line', 'mem', 'disk', 'wal', 'dirty', 'crash', 'surface'];
+  const readTokens = () => {
+    const s = getComputedStyle(document.documentElement);
+    for (const n of TOKENS) T[n] = new THREE.Color(s.getPropertyValue('--' + n).trim());
+  };
+  readTokens();
+
+  const mats = [];
+  const track = (m, token, tint, alpha) => {
+    m.transparent = true;
+    m.userData = { token, tint, alpha, dim: false };
+    mats.push(m);
+    paint(m);
+    return m;
+  };
+  // tint mixes the token toward the stage color; dim fades parts outside the current step.
+  function paint(m) {
+    const u = m.userData;
+    m.color.copy(T[u.token]).lerp(T.stage, u.tint);
+    m.opacity = u.alpha * (u.dim ? 0.16 : 1);
+    m.depthWrite = m.opacity > 0.95;
+  }
+  const surf = (token, tint = 0, alpha = 1) =>
+    track(new THREE.MeshStandardMaterial({ roughness: 0.85, metalness: 0 }), token, tint, alpha);
+  const flat = (token, tint = 0, alpha = 1) => track(new THREE.MeshBasicMaterial(), token, tint, alpha);
+  const edge = (alpha = 0.32) => track(new THREE.LineBasicMaterial(), 'fg', 0, alpha);
+  const retint = (mesh, token, tint) => {
+    const u = mesh.material.userData;
+    u.token = token;
+    u.tint = tint;
+    paint(mesh.material);
+  };
+
+  function box(w, h, d, mat, x, y, z, edges = true) {
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+    mesh.position.set(x, y, z);
+    if (edges) mesh.add(new THREE.LineSegments(new THREE.EdgesGeometry(mesh.geometry), edge()));
+    return mesh;
+  }
+  function cylinder(r, h, mat, p) {
+    const mesh = new THREE.Mesh(new THREE.CylinderGeometry(r, r, h, 40), mat);
+    mesh.position.set(p.x, p.y + h / 2, p.z);
+    mesh.add(new THREE.LineSegments(new THREE.EdgesGeometry(mesh.geometry, 30), edge()));
+    return mesh;
+  }
+  function label(cls, html, p, cx = 0.5, cy = 1) {
+    const el = document.createElement('div');
+    el.className = 'tag ' + cls;
+    el.innerHTML = html;
+    const o = new CSS2DObject(el);
+    o.position.copy(p);
+    o.center.set(cx, cy);
+    return o;
+  }
+
+  // ── parts: each one dims as a unit when a step does not focus it ──
+  const parts = {};
+  const details = {};
+  function part(id, name, at, cx = 0.5, cy = 1) {
+    const g = new THREE.Group();
+    const tag = label('', `<span>${name}</span><div class="detail" hidden></div>`, at, cx, cy);
+    g.add(tag);
+    details[id] = tag.element.querySelector('.detail');
+    parts[id] = g;
+    scene.add(g);
+    return g;
+  }
+
+  // Layers: two plates joined by corner posts.
+  const plateW = 11.1, plateD = 5.2, plateX = 1.45, plateZ = -0.2;
+  const memPlate = box(plateW, 0.08, plateD, surf('mem', 0.86, 0.9), plateX, MEM_Y - 0.04, plateZ);
+  const diskPlate = box(plateW, 0.08, plateD, surf('disk', 0.84, 0.9), plateX, -0.04, plateZ);
+  scene.add(memPlate, diskPlate);
+  const postPts = [];
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) {
+    const x = plateX + sx * plateW / 2, z = plateZ + sz * plateD / 2;
+    postPts.push(V(x, 0, z), V(x, MEM_Y, z));
+  }
+  scene.add(new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(postPts), edge(0.25)));
+  const left = plateX - plateW / 2 + 0.25, front = plateZ + plateD / 2 - 0.15;
+  scene.add(label('layer', '메모리<small>서버가 꺼지면 사라짐</small>', V(left, MEM_Y + 0.05, front), 0, 1));
+  scene.add(label('layer', '디스크<small>서버가 꺼져도 남음</small>', V(left, 0.05, front), 0, 1));
+
+  // Client: a monitor on its own pad, outside the server.
+  const client = part('client', '클라이언트', V(CLIENT.x, MEM_Y + 1.45, CLIENT.z));
+  client.add(
+    box(1.9, 0.06, 1.7, surf('line', 0, 0.9), CLIENT.x, MEM_Y - 0.03, CLIENT.z),
+    box(0.6, 0.05, 0.4, surf('muted', 0.2), CLIENT.x, MEM_Y + 0.025, CLIENT.z),
+    box(0.08, 0.4, 0.08, surf('muted', 0.2), CLIENT.x, MEM_Y + 0.25, CLIENT.z),
+    box(1.25, 0.8, 0.08, surf('muted', 0.2), CLIENT.x, MEM_Y + 0.85, CLIENT.z),
+    box(1.12, 0.68, 0.01, surf('fg', 0.1), CLIENT.x, MEM_Y + 0.85, CLIENT.z + 0.045, false),
+  );
+
+  const backend = part('backend', '백엔드 프로세스', V(BACKEND.x, MEM_Y + 1.15, BACKEND.z));
+  const backendBody = cylinder(0.42, 0.9, surf('fg', 0.15), BACKEND);
+  backend.add(backendBody);
+
+  const ckpt = part('ckpt', 'checkpointer', V(CKPT.x, MEM_Y + 1.05, CKPT.z));
+  const ckptBody = cylinder(0.36, 0.8, surf('fg', 0.15), CKPT);
+  ckpt.add(ckptBody);
+
+  const sbuf = part('sbuf', 'shared buffers', V(colX(1.5), MEM_Y + 0.1, rowZ(2) + 0.55), 0.5, 0);
+  const slots = [];
+  for (let r = 0; r < 3; r++) for (let c = 0; c < 4; c++) {
+    const s = box(0.72, 0.14, 0.72, surf('mem', 0.8), colX(c), MEM_Y + 0.07, rowZ(r));
+    slots.push(s);
+    sbuf.add(s);
+  }
+  const frame = new THREE.LineSegments(
+    new THREE.EdgesGeometry(new THREE.BoxGeometry(3.7, 0.02, 2.8)), edge(0.5));
+  frame.position.set(colX(1.5), MEM_Y + 0.01, ROW_Z);
+  sbuf.add(frame);
+
+  const walbuf = part('walbuf', 'WAL buffers', V(walX(2.5), MEM_Y + 0.1, ROW_Z + 0.55), 0.5, 0);
+  const wb = [];
+  for (let i = 0; i < 6; i++) {
+    const c = box(0.36, 0.14, 0.72, surf('wal', 0.8), walX(i), MEM_Y + 0.07, ROW_Z);
+    wb.push(c);
+    walbuf.add(c);
+  }
+
+  const datafile = part('datafile', '데이터 파일', V(blockX(3.5), 0.1, ROW_Z + 0.6), 0.5, 0);
+  for (let i = 0; i < 8; i++) datafile.add(box(0.38, 0.62, 0.9, surf('disk', 0.1), blockX(i), 0.31, ROW_Z));
+
+  const walfile = part('walfile', 'WAL 파일 (pg_wal)', V(walX(2.5), 0.1, ROW_Z + 0.6), 0.5, 0);
+  const wf = [];
+  for (let i = 0; i < 6; i++) {
+    const c = box(0.4, 0.36, 0.9, surf('wal', 0.8), walX(i), 0.18, ROW_Z);
+    wf.push(c);
+    walfile.add(c);
+  }
+
+  // Pins name the one page this story follows, on both layers.
+  const pinSlot = label('pin', '블록 7', V(SLOT_X, MEM_Y + 0.32, ROW_Z));
+  const pinBlock = label('pin', '블록 7', V(blockX(7), 0.8, ROW_Z));
+  const crashTag = label('crash', '전원 꺼짐 · 메모리 내용 사라짐', V(plateX, MEM_Y + 1.1, plateZ));
+  scene.add(pinSlot, pinBlock, crashTag);
+
+  // ── arrows: one curve per numbered path ──
+  const arc = (a, b, lift, side = 0) => {
+    const mid = a.clone().add(b).multiplyScalar(0.5);
+    mid.y += lift;
+    mid.z += side;
+    return new THREE.QuadraticBezierCurve3(a, mid, b);
+  };
+  const atSlot = V(SLOT_X, MEM_Y + 0.22, ROW_Z);
+  const atBlock = V(blockX(7), 0.72, ROW_Z);
+  const fromBackend = V(BACKEND.x + 0.35, MEM_Y + 0.75, BACKEND.z);
+  const atWb = i => V(walX(i), MEM_Y + 0.22, ROW_Z);
+  const atWf = i => V(walX(i), 0.42, ROW_Z);
+  const CURVES = {
+    1: arc(V(CLIENT.x + 0.7, MEM_Y + 0.85, CLIENT.z), V(BACKEND.x - 0.5, MEM_Y + 0.6, BACKEND.z), 0.9),
+    2: arc(atBlock, atSlot, 0, 1.2),
+    3: arc(fromBackend, atSlot, 1.3),
+    4: arc(fromBackend, atWb(2), 2.2),
+    5: arc(atWb(2.5), atWf(2.5), 0, 1.1),
+    6: arc(atSlot, atBlock, 0, -1.2),
+    7: arc(atWf(2), atSlot, 0.6, 1.5),
+  };
+  const arrows = {};
+  for (const p of PATHS) {
+    const c = CURVES[p.n];
+    const m = flat(p.token, 0, 0.9);
+    const g = new THREE.Group();
+    g.add(new THREE.Mesh(new THREE.TubeGeometry(c, 48, 0.028, 6, false), m));
+    const head = new THREE.Mesh(new THREE.ConeGeometry(0.09, 0.24, 12), m);
+    const tan = c.getTangent(1);
+    head.position.copy(c.getPoint(1)).addScaledVector(tan, -0.1);
+    head.quaternion.setFromUnitVectors(V(0, 1, 0), tan);
+    g.add(head);
+    const badge = label('badge', String(p.n), c.getPoint(p.at ?? 0.5), 0.5, 0.5);
+    badge.element.style.setProperty('--c', `var(--${p.token})`);
+    g.add(badge);
+    g.visible = false;
+    scene.add(g);
+    arrows[p.n] = { g, badge };
+  }
+
+  // ── moving tokens ──
+  function makeToken(w, h, d) {
+    const m = new THREE.MeshStandardMaterial({ roughness: 0.5, emissiveIntensity: 0.45 });
+    const t = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m);
+    t.visible = false;
+    scene.add(t);
+    return t;
+  }
+  const tokPacket = makeToken(0.3, 0.3, 0.3);
+  const tokPage = makeToken(0.62, 0.12, 0.62);
+  const tokRec = makeToken(0.34, 0.14, 0.6);
+  const tokRec2 = makeToken(0.34, 0.14, 0.6);
+  const tokens = [tokPacket, tokPage, tokRec, tokRec2];
+
+  // ── tweens; gen cancels everything from an older step ──
+  let gen = 0;
+  const tweens = new Set();
+  function tween(dur, fn) {
+    if (reduce || dur <= 0) { fn(1); return Promise.resolve(); }
+    return new Promise(res => tweens.add({ t0: performance.now(), dur, fn, res, gen }));
+  }
+  function runTweens(now) {
+    for (const tw of tweens) {
+      if (tw.gen !== gen) { tweens.delete(tw); tw.res(); continue; }
+      const k = Math.min(1, (now - tw.t0) / tw.dur);
+      tw.fn(ease(k));
+      if (k >= 1) { tweens.delete(tw); tw.res(); }
+    }
+  }
+  function move(tok, curve, dur, token, reverse = false) {
+    const g = gen;
+    tok.material.color.copy(T[token]);
+    tok.material.emissive.copy(T[token]);
+    tok.position.copy(curve.getPoint(reverse ? 1 : 0));
+    tok.visible = true;
+    return tween(dur, k => tok.position.copy(curve.getPoint(reverse ? 1 - k : k)))
+      .then(() => { if (g === gen) tok.visible = false; });
+  }
+  const flash = mesh => tween(700, k => {
+    mesh.material.emissive.copy(mesh.material.color);
+    mesh.material.emissiveIntensity = 0.9 * (1 - k);
+  });
+  const pulse = mesh => tween(800, k => mesh.scale.setScalar(1 + 0.18 * Math.sin(Math.PI * k)));
+
+  // ── world state → scene ──
+  let step = STEPS[0];
+  let state = step.state;
+  function applyState(s) {
+    state = s;
+    slots.forEach((m, i) => {
+      if (i === TARGET) return;
+      retint(m, 'mem', !s.cold && FILLED.includes(i) ? 0.35 : 0.8);
+    });
+    const page = s.slot;
+    retint(slots[TARGET], page === 'dirty70' ? 'dirty' : 'mem', page === 'empty' ? 0.8 : 0);
+    wb.forEach((m, i) => retint(m, 'wal', (i === 2 && s.walBuf >= 1) || (i === 3 && s.walBuf >= 2) ? 0 : 0.8));
+    wf.forEach((m, i) => retint(m, 'wal', i < 2 ? 0.45 : i < 4 && s.walFile >= 2 ? 0 : 0.8));
+    retint(memPlate, s.down ? 'crash' : 'mem', s.down ? 0.72 : 0.86);
+    retint(backendBody, 'fg', s.down ? 0.75 : 0.15);
+    retint(ckptBody, 'fg', s.down ? 0.75 : 0.15);
+
+    const d = describe(s);
+    for (const [id, el] of Object.entries(details)) {
+      const on = step.details !== false && step.focus.includes(id) && d[id];
+      el.hidden = !on;
+      el.textContent = on ? d[id] : '';
+    }
+    pinSlot.visible = page !== 'empty' && step.focus.includes('sbuf');
+    pinBlock.visible = step.focus.includes('datafile');
+    crashTag.visible = s.down;
+  }
+  function setFocus(ids) {
+    for (const [id, g] of Object.entries(parts)) {
+      const dim = !ids.includes(id);
+      g.traverse(o => {
+        if (o.material) { o.material.userData.dim = dim; paint(o.material); }
+        if (o.isCSS2DObject) o.element.classList.toggle('dim', dim);
+      });
+    }
+  }
+  function setArrows(ns) {
+    for (const [n, a] of Object.entries(arrows)) {
+      a.g.visible = ns.includes(Number(n));
+      a.badge.visible = a.g.visible && step.id === 'summary';
+    }
+  }
+
+  // ── step animations: each one starts from the previous step's end state ──
+  const ANIM = {
+    async query() { await move(tokPacket, CURVES[1], 1100, 'fg'); },
+    async read() { await move(tokPage, CURVES[2], 1300, 'mem'); },
+    async dirty(alive) {
+      await move(tokPacket, CURVES[3], 1000, 'dirty');
+      if (!alive()) return;
+      applyState(step.state);
+      await flash(slots[TARGET]);
+    },
+    async wal() { await move(tokRec, CURVES[4], 1300, 'wal'); },
+    async commit(alive) {
+      await move(tokPacket, CURVES[1], 900, 'fg');
+      if (!alive()) return;
+      await move(tokRec, arc(fromBackend, atWb(3), 2.2), 900, 'wal');
+      if (!alive()) return;
+      applyState({ ...state, walBuf: 2 });
+      await tween(300, () => {});
+      if (!alive()) return;
+      applyState({ ...state, walBuf: 0 });
+      await Promise.all([
+        move(tokRec, arc(atWb(2), atWf(2), 0, 1.1), 1000, 'wal'),
+        move(tokRec2, arc(atWb(3), atWf(3), 0, 1.1), 1000, 'wal'),
+      ]);
+      if (!alive()) return;
+      applyState({ ...state, walFile: 2 });
+      await move(tokPacket, CURVES[1], 900, 'fg', true);
+    },
+    async crash() {
+      const from = T.mem.clone().lerp(T.stage, 0.86);
+      await tween(900, k => {
+        memPlate.material.color.copy(from).lerp(T.crash, 0.6 * Math.sin(Math.PI * k * 1.5) ** 2);
+      });
+    },
+    async redo() { await move(tokRec, CURVES[7], 1400, 'wal'); },
+    async checkpoint(alive) {
+      await pulse(ckptBody);
+      if (!alive()) return;
+      await move(tokPage, CURVES[6], 1300, 'dirty');
+    },
+  };
+
+  // ── camera ──
+  let fly = null;
+  function framed(c) {
+    const tgt = V(...c.tgt);
+    const az = THREE.MathUtils.degToRad(c.az), el = THREE.MathUtils.degToRad(c.el);
+    // Views are framed for a 1.15:1 stage; back off on narrower stages.
+    const d = c.d * Math.max(1, Math.pow(1.15 / camera.aspect, 0.9));
+    const pos = V(Math.cos(el) * Math.sin(az), Math.sin(el), Math.cos(el) * Math.cos(az)).multiplyScalar(d).add(tgt);
+    return { pos, tgt };
+  }
+  function flyTo(c, animate) {
+    const { pos, tgt } = framed(c);
+    if (!animate || reduce) {
+      camera.position.copy(pos);
+      controls.target.copy(tgt);
+      fly = null;
+      return;
+    }
+    fly = { p0: camera.position.clone(), t0: controls.target.clone(), pos, tgt, start: performance.now() };
+  }
+  controls.addEventListener('start', () => { fly = null; });
+
+  async function show(i, animate) {
+    const my = ++gen;
+    const alive = () => my === gen;
+    step = STEPS[i];
+    tokens.forEach(t => { t.visible = false; });
+    ckptBody.scale.setScalar(1);
+    slots[TARGET].material.emissiveIntensity = 0;
+    setFocus(step.focus);
+    setArrows(step.paths);
+    flyTo(step.cam, animate);
+    const anim = ANIM[step.id];
+    if (!animate || reduce || !anim) { applyState(step.state); return; }
+    applyState(i > 0 ? STEPS[i - 1].state : step.state);
+    await tween(650, () => {});
+    if (!alive()) return;
+    await anim(alive);
+    if (!alive()) return;
+    applyState(step.state);
+  }
+
+  function resize() {
+    const w = stage.clientWidth, h = stage.clientHeight;
+    if (!w || !h) return;
+    renderer.setSize(w, h);
+    overlay.setSize(w, h);
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+    flyTo(step.cam, false);
+  }
+  new ResizeObserver(resize).observe(stage);
+
+  const retheme = () => { readTokens(); mats.forEach(paint); };
+  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', retheme);
+  new MutationObserver(retheme).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+
+  renderer.setAnimationLoop(now => {
+    runTweens(now);
+    if (fly) {
+      const k = ease(Math.min(1, (now - fly.start) / 1100));
+      camera.position.lerpVectors(fly.p0, fly.pos, k);
+      controls.target.lerpVectors(fly.t0, fly.tgt, k);
+      if (k >= 1) fly = null;
+    }
+    controls.update();
+    renderer.render(scene, camera);
+    overlay.render(scene, camera);
+  });
+
+  resize();
+  document.getElementById('stage-msg').hidden = true;
+  window.PGW_STAGE = { show, reframe: () => flyTo(step.cam, true) };
+  show(window.PGW.cur(), false);
+}
+
+try {
+  boot();
+} catch (e) {
+  window.PGW.fail('이 브라우저에서 3D 장면을 그릴 수 없습니다 (WebGL). 단계 설명과 현재 상태는 패널에서 그대로 볼 수 있습니다.');
+  console.error(e);
+}
+</script>

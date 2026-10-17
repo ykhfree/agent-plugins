@@ -13,7 +13,7 @@ Each plugin is versioned on its own and lives in its own directory under `plugin
 Current plugins:
 - **pr-comment**: Analyzes GitHub PR comments and categorizes them by priority
 - **skillify**: Turns a validated solution or a recurring failure into a permanent skill with scripts, tests, and evals
-- **explain-ladder**: Re-explains a topic in a new form (prose, ASCII diagram, HTML page, video) when the user still does not understand
+- **explain-ladder**: Re-explains a topic in a new form (prose, ASCII diagram, 2D or 3D HTML page, video) when the user still does not understand
 - **jev-delegation**: Says when to hand a narrow judgment to TypeSafe's Jev through the `jev` CLI, and which verdicts to trust
 
 ## Compatibility
@@ -71,7 +71,9 @@ Do not add a root `plugin.json` (Agent Plugins format). Codex 0.142.3 ignores it
 │   │   └── skills/
 │   │       └── explain-ladder/
 │   │           ├── SKILL.md
+│   │           ├── 3d.md         # Level 3 3D variant rules
 │   │           ├── video.md      # Level 4 procedure
+│   │           ├── examples/     # 3D reference page
 │   │           ├── scripts/      # check_diagram.py, video/ (build.py + pytest suite)
 │   │           ├── tests/        # Shell tests that run_tests.sh finds
 │   │           └── evals/

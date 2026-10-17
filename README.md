@@ -13,7 +13,7 @@ Analyzes all comments on a GitHub PR and organizes unresolved items by priority.
 Turns a validated solution or a recurring failure into a permanent skill with scripts, tests, evals, and a deterministic validation gate.
 
 ### Explain Ladder (`explain-ladder`)
-Re-explains a topic in a new form when the user still does not understand: STE prose, then an ASCII diagram, then a step-by-step HTML page, then a narrated video.
+Re-explains a topic in a new form when the user still does not understand: STE prose, then an ASCII diagram, then a step-by-step HTML page (2D, or a 3D scene for topics with depth), then a narrated video.
 
 ### Jev Delegation (`jev-delegation`)
 Hands narrow judgments to TypeSafe's Jev model through the jev CLI, and says which Jev verdicts to act on and which only advise.
@@ -127,7 +127,7 @@ Bundled scripts:
 
 Ask a question first. If the answer is still unclear, say so, for example "아직 모르겠어", "더 쉽게 설명해", or "still not clear".
 The agent picks the `explain-ladder` skill from its description and climbs one level.
-To jump to a level, name it: "그림으로 보여줘", "HTML로 설명해", or "영상으로 설명해".
+To jump to a level, name it: "그림으로 보여줘", "HTML로 설명해", "3D로 보여줘", or "영상으로 설명해".
 
 In Claude Code, you can also call it directly:
 ```bash
@@ -140,12 +140,13 @@ In Claude Code, you can also call it directly:
 |---|---|---|
 | 1 | STE prose | Answer first, one point per sentence, one term per concept |
 | 2 | ASCII diagram | ASCII symbols only, 72 columns or narrower, 3 to 9 boxes, checked by `scripts/check_diagram.py` |
-| 3 | Single-file HTML page | One step per screen, previous/next buttons, arrow keys, step counter |
+| 3 | Single-file HTML page | One step per screen, previous/next buttons, arrow keys, step counter. A 3D variant (three.js) for topics with depth, in `skills/explain-ladder/3d.md` |
 | 4 | Narrated video | Offered only; built on request with `scripts/video/build.py` (Manim, macOS `say`, ffmpeg) |
 
 #### Requirements
 
 - Python 3 for `scripts/check_diagram.py` (standard library only)
+- Level 3, 3D variant: nothing to install. The page loads three.js 0.160.0 from cdn.jsdelivr.net
 - Level 4 only: macOS, Homebrew `ffmpeg`, `cairo`, `pango`, `pkg-config`, and a Python 3.13 venv with Manim 0.22.0.
   `skills/explain-ladder/video.md` has the setup commands.
 

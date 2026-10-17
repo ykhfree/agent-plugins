@@ -1,6 +1,6 @@
 ---
 name: explain-ladder
-description: Use when the user says an explanation is still unclear and wants it explained another way — "아직 모르겠어", "이해가 안 돼", "더 쉽게 설명해", "그림으로 보여줘", "다이어그램으로", "HTML로 설명해", "explain in HTML", "영상으로 설명해", "still not clear", "explain it differently". Climbs one level of the explanation ladder (STE prose → ASCII diagram → single-file HTML → video) and defines the output rules for each level.
+description: Use when the user says an explanation is still unclear and wants it explained another way — "아직 모르겠어", "이해가 안 돼", "더 쉽게 설명해", "그림으로 보여줘", "다이어그램으로", "HTML로 설명해", "explain in HTML", "3D로 보여줘", "3D로 설명해", "영상으로 설명해", "still not clear", "explain it differently". Climbs one level of the explanation ladder (STE prose → ASCII diagram → single-file HTML, 2D or a 3D scene → video) and defines the output rules for each level.
 ---
 
 # explain-ladder
@@ -14,6 +14,8 @@ still does not understand. Each level has its own output rules, defined below.
        (climb one level each time the user is still unclear)
 ```
 
+Level 3 has a 3D variant for topics with depth. `3d.md` holds its rules.
+
 Trigger class: (a) verified-success-promotion. The ladder was used in real sessions, and level 4
 built a narrated Korean demo video from a three-step level 3 page.
 
@@ -24,13 +26,15 @@ Each sub-step is either model judgment (LATENT) or code (DETERMINISTIC):
 | Find the current level and the target level | LATENT | Procedure steps 1–2 |
 | Find the point of confusion | LATENT | Procedure step 3 |
 | Write the explanation at the target level | LATENT | Level rules |
+| Choose 2D or 3D for a level 3 page | LATENT | Level 3 rules |
+| Build and check a 3D scene | LATENT | `3d.md` |
 | Check a level 2 diagram: allowed characters, width, box count | DETERMINISTIC | `scripts/check_diagram.py` |
 | Check `script.json`, make the narration, pad each scene to it, join the video | DETERMINISTIC | `scripts/video/build.py` |
 | Check a level 4 video frame for overlapping or missing text | LATENT | `video.md` step 6 |
 
 ## When to Use
 - The user says the last explanation is unclear, or asks for a simpler or different form.
-- The user names a level directly: "그림으로", "HTML로 설명해", "영상으로".
+- The user names a level directly: "그림으로", "HTML로 설명해", "3D로", "영상으로".
 
 ## When NOT to Use
 - The first explanation of a topic. Write level 1 prose (the level 1 rules below) without climbing.
@@ -40,7 +44,7 @@ Each sub-step is either model judgment (LATENT) or code (DETERMINISTIC):
 ## Mandatory Procedure
 1. Find the current level: look at the form of your last explanation of this topic.
 2. Find the target level:
-   - If the user names a level, use that level.
+   - If the user names a level, use that level. "3D로" names level 3 with the 3D variant.
    - If not, use the current level + 1.
    - If the target is level 2 and the topic has fewer than 3 parts, a diagram adds little.
      Rewrite level 1 with one concrete example (real values, real names) instead.
@@ -105,6 +109,14 @@ Use for flows and structures with 3 or more parts.
   in this step.
 - Use the level 2 diagram as the backbone if one exists: same boxes, same names, same order.
 - Make the last step a summary that shows the whole picture at once.
+- Choose 2D or 3D:
+  - Use 2D (SVG or HTML) by default.
+  - Use the 3D variant if the user asks for 3D.
+  - Also use it if the topic has depth that a flat picture hides: stacked layers (memory over disk),
+    a physical layout (a server rack, a cache hierarchy), or 3D geometry (coordinate transforms).
+  - If the topic is a sequence or a flow without depth, stay in 2D. In 3D, parts can hide other parts,
+    and the user must rotate the view to read them.
+  - For the 3D variant, read `3d.md` in this skill directory and follow it.
 
 ### Level 4 — explainer video
 - If the user is still stuck after level 3, offer the video in one sentence. Build it only if the user asks.
@@ -112,6 +124,7 @@ Use for flows and structures with 3 or more parts.
   If the machine is not macOS, tell the user, and stay at level 3.
 - Read `video.md` in this skill directory and follow its procedure. It uses Manim, `say`, and ffmpeg.
 - Build the scenes from the level 3 steps: same steps, same names, same order.
+- If the level 3 page was 3D, draw the video scenes in 2D. `video.md` has no 3D procedure.
 
 ## Relationship to other skills
 - `archify` draws polished architecture diagrams as HTML. This skill calls it at level 3; it does not
