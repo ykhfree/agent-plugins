@@ -236,6 +236,10 @@ copilot plugin list --json
 npx skills add "$PWD" --list
 ```
 
+The skills CLI parses frontmatter as strict YAML. Claude Code does not, so it hides this error.
+If the list shows a `Skipped ... YAML parse error` line, fix that `SKILL.md`.
+A common cause is `: ` (colon and space) inside an unquoted `description`. Rewrite the sentence without it.
+
 For Copilot CLI: if a marketplace named `ykhfree-plugins` is already added from GitHub, remove it first or test on a copy with a different marketplace `name`.
 
 Copilot CLI 1.0.10 installs a plugin from a local-path marketplace with `"source": "live"` and `"enabled": false`, so its skills do not load.
