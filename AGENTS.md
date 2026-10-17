@@ -14,6 +14,7 @@ Current plugins:
 - **pr-comment**: Analyzes GitHub PR comments and categorizes them by priority
 - **skillify**: Turns a validated solution or a recurring failure into a permanent skill with scripts, tests, and evals
 - **explain-ladder**: Re-explains a topic in a new form (prose, ASCII diagram, HTML page, video) when the user still does not understand
+- **jev-delegation**: Says when to hand a narrow judgment to TypeSafe's Jev through the `jev` CLI, and which verdicts to trust
 
 ## Compatibility
 
@@ -62,18 +63,26 @@ Do not add a root `plugin.json` (Agent Plugins format). Codex 0.142.3 ignores it
 │   │           ├── scripts/      # Bash scripts that the skill runs
 │   │           ├── tests/        # Tests of skillify itself
 │   │           └── evals/
-│   └── explain-ladder/
+│   ├── explain-ladder/
+│   │   ├── .claude-plugin/
+│   │   │   └── plugin.json
+│   │   ├── .codex-plugin/
+│   │   │   └── plugin.json
+│   │   └── skills/
+│   │       └── explain-ladder/
+│   │           ├── SKILL.md
+│   │           ├── video.md      # Level 4 procedure
+│   │           ├── scripts/      # check_diagram.py, video/ (build.py + pytest suite)
+│   │           ├── tests/        # Shell tests that run_tests.sh finds
+│   │           └── evals/
+│   └── jev-delegation/
 │       ├── .claude-plugin/
 │       │   └── plugin.json
 │       ├── .codex-plugin/
 │       │   └── plugin.json
 │       └── skills/
-│           └── explain-ladder/
-│               ├── SKILL.md
-│               ├── video.md      # Level 4 procedure
-│               ├── scripts/      # check_diagram.py, video/ (build.py + pytest suite)
-│               ├── tests/        # Shell tests that run_tests.sh finds
-│               └── evals/
+│           └── jev-delegation/
+│               └── SKILL.md      # Commands, image rules, and which verdicts to trust
 ├── AGENTS.md
 ├── CLAUDE.md                     # Imports AGENTS.md
 └── README.md
@@ -262,3 +271,8 @@ Use conventional commit messages, such as `feat: add new skill`, `fix: resolve p
   ```
   If the venv Python is missing, the video tests fail. They do not skip.
 - To pass gate 9 of `validate.sh`, copy the skill to `<temp dir>/.claude/skills/explain-ladder` and validate the copy.
+
+### jev-delegation
+- The skill is documentation only. It has no scripts or tests.
+- It needs the `jev` CLI on `PATH` and `TYPESAFE_API_KEY`. The CLI is not published.
+- Keep the skill in sync with the CLI: when a `jev` command's flags or output fields change, update `SKILL.md` and raise the plugin version.

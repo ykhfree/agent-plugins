@@ -1,0 +1,36 @@
+{
+  "name": "jev-delegation",
+  "version": "1.0.0",
+  "description": "Hands narrow judgments to TypeSafe's Jev model through the jev CLI, and says which Jev verdicts to act on and which only advise.",
+  "author": {
+    "name": "kanghyun.yang",
+    "url": "https://github.com/ykhfree"
+  },
+  "homepage": "https://github.com/ykhfree/agent-plugins",
+  "repository": "https://github.com/ykhfree/agent-plugins",
+  "license": "MIT",
+  "keywords": [
+    "typesafe",
+    "jev",
+    "delegation",
+    "judgment",
+    "screenshots"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Jev Delegation",
+    "shortDescription": "Delegate narrow judgments to TypeSafe Jev",
+    "longDescription": "Hands narrow judgments to TypeSafe's Jev model through the jev CLI, and says which Jev verdicts to act on and which only advise.",
+    "developerName": "kanghyun.yang",
+    "category": "Developer Tools",
+    "capabilities": [
+      "Read"
+    ],
+    "websiteURL": "https://github.com/ykhfree/agent-plugins",
+    "defaultPrompt": [
+      "이 로그에서 타임아웃 원인이 적힌 줄만 찾아줘",
+      "검색 결과를 질문과 관련 있는 순서로 정렬해줘",
+      "이 스크린샷에서 'Cancel' 버튼 위치를 찾아줘"
+    ]
+  }
+}

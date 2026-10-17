@@ -15,6 +15,9 @@ Turns a validated solution or a recurring failure into a permanent skill with sc
 ### Explain Ladder (`explain-ladder`)
 Re-explains a topic in a new form when the user still does not understand: STE prose, then an ASCII diagram, then a step-by-step HTML page, then a narrated video.
 
+### Jev Delegation (`jev-delegation`)
+Hands narrow judgments to TypeSafe's Jev model through the jev CLI, and says which Jev verdicts to act on and which only advise.
+
 ## Installation
 
 The marketplace name is `ykhfree-plugins`. Each agent installs a plugin as `<plugin>@ykhfree-plugins`.
@@ -145,6 +148,34 @@ In Claude Code, you can also call it directly:
 - Python 3 for `scripts/check_diagram.py` (standard library only)
 - Level 4 only: macOS, Homebrew `ffmpeg`, `cairo`, `pango`, `pkg-config`, and a Python 3.13 venv with Manim 0.22.0.
   `skills/explain-ladder/video.md` has the setup commands.
+
+### Jev Delegation
+
+#### Usage
+
+The agent loads the `jev-delegation` skill before its first `jev` call, or when a judgment spans many items:
+a large log to search, many search hits to rank, fetched pages to screen, screenshots to rank or click, or a photo to check for named objects.
+A short pointer in your agent instructions (for example `~/.claude/CLAUDE.md`) makes the agent load it first.
+
+In Claude Code, you can also call it directly:
+```bash
+/jev-delegation:jev-delegation
+```
+
+#### What it covers
+
+| Part | Content |
+|---|---|
+| Commands | `find`, `rank`, `screen`, `search`, `which`, `locate`, `detect` |
+| Images | Only fixture or dev screens, and public-domain or fixture photos with no people |
+| Never delegate | Generative work, arithmetic, a few items already in context, real secrets |
+| Jev decides | Verdicts the agent acts on without re-reading the item |
+| Jev advises | Verdicts the agent checks against the source |
+
+#### Requirements
+
+- The `jev` CLI on `PATH`. It is not published, so this plugin is useful only where `jev` is installed.
+- `TYPESAFE_API_KEY` in the environment. Every `jev` call is a billed TypeSafe request.
 
 ## Contributing
 

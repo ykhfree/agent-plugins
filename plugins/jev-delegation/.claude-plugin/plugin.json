@@ -1,0 +1,19 @@
+{
+  "name": "jev-delegation",
+  "version": "1.0.0",
+  "description": "Hands narrow judgments to TypeSafe's Jev model through the jev CLI, and says which Jev verdicts to act on and which only advise.",
+  "author": {
+    "name": "kanghyun.yang",
+    "url": "https://github.com/ykhfree"
+  },
+  "homepage": "https://github.com/ykhfree/agent-plugins",
+  "repository": "https://github.com/ykhfree/agent-plugins",
+  "license": "MIT",
+  "keywords": [
+    "typesafe",
+    "jev",
+    "delegation",
+    "judgment",
+    "screenshots"
+  ]
+}
