@@ -39,7 +39,7 @@
       "name": "jev-delegation",
       "source": "./plugins/jev-delegation",
       "description": "Hands narrow judgments to TypeSafe's Jev model through the jev CLI, and says which Jev verdicts to act on and which only advise.",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "author": {
         "name": "kanghyun.yang"
       }

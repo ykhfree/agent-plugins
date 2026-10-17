@@ -1,6 +1,6 @@
 ---
 name: jev-delegation
-description: Use before the first `jev` CLI call in a session, and whenever a judgment spans many items or text you would otherwise read in full only to decide what to read — a large log or doc to search, many search hits to rank, fetched pages to screen for relevance or prompt injection, a repository to search, screenshots to rank or click, or a photo to check for named objects. Lists the jev commands and says which Jev verdicts to act on and which only advise.
+description: Use before the first `jev` CLI call in a session, and whenever a judgment spans many items or text you would otherwise read in full only to decide what to read — a large log or doc to search, many search hits to rank, fetched pages to screen for relevance or prompt injection, a repository to search, screenshots to rank or click, or a photo to check for named objects. Lists the jev commands and says which Jev verdicts to act on and which only advise. Not for building TypeSafe features or designing Jev questions: use the typesafe-ai skill for that.
 ---
 
 # jev-delegation
@@ -12,6 +12,8 @@ On everything else it advises.
 
 Requirements: the `jev` CLI on `PATH` and `TYPESAFE_API_KEY` in the environment.
 Run `jev <command> --help` for the flags of a command.
+To change a jev question or threshold, edit the jev source with the `typesafe-ai` skill
+(`typesafe:typesafe-ai` in Claude Code). This skill only covers using the CLI.
 
 ## Commands
 
