@@ -1,0 +1,17 @@
+[
+ {
+  "claim": "conflict나 duplicate가 없으면, decide는 noise 점수가 0.7 이상일 때 skip을 반환한다.",
+  "file": "gate.py",
+  "quote": "if any(p <= lo for p in wanted) or scores[\"noise\"] >= hi:"
+ },
+ {
+  "claim": "Run records are stored in per-month folders, runs/<YYYY-MM>/<id>.json.",
+  "file": "store.py",
+  "quote": "return self.runs_dir / run_id[:7] / f\"{run_id}.json\""
+ },
+ {
+  "claim": "decide skips when noise exceeds the upper band.",
+  "file": "gate.py",
+  "quote": "if any(p <= lo for p in wanted) or scores[\"noise\"] > hi:"
+ }
+]

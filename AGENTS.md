@@ -15,6 +15,7 @@ Current plugins:
 - **skillify**: Turns a validated solution or a recurring failure into a permanent skill with scripts, tests, and evals
 - **explain-ladder**: Re-explains a topic in a new form (prose, ASCII diagram, 2D or 3D HTML page, video) when the user still does not understand
 - **jev-delegation**: Says when to hand a narrow judgment to TypeSafe's Jev through the `jev` CLI, and which verdicts to trust
+- **quote-check**: Checks that the quotes a review or investigation report cites appear verbatim in their files, before the report goes out
 
 ## Compatibility
 
@@ -77,14 +78,25 @@ Do not add a root `plugin.json` (Agent Plugins format). Codex 0.142.3 ignores it
 │   │           ├── scripts/      # check_diagram.py, video/ (build.py + pytest suite)
 │   │           ├── tests/        # Shell tests that run_tests.sh finds
 │   │           └── evals/
-│   └── jev-delegation/
+│   ├── jev-delegation/
+│   │   ├── .claude-plugin/
+│   │   │   └── plugin.json
+│   │   ├── .codex-plugin/
+│   │   │   └── plugin.json
+│   │   └── skills/
+│   │       └── jev-delegation/
+│   │           └── SKILL.md      # Commands, image rules, and which verdicts to trust
+│   └── quote-check/
 │       ├── .claude-plugin/
 │       │   └── plugin.json
 │       ├── .codex-plugin/
 │       │   └── plugin.json
 │       └── skills/
-│           └── jev-delegation/
-│               └── SKILL.md      # Commands, image rules, and which verdicts to trust
+│           └── quote-check/
+│               ├── SKILL.md
+│               ├── scripts/      # quote_check.py (standard library only)
+│               ├── tests/        # Shell tests that run_tests.sh finds, and a sample repository
+│               └── evals/
 ├── AGENTS.md
 ├── CLAUDE.md                     # Imports AGENTS.md
 └── README.md
@@ -282,3 +294,13 @@ Use conventional commit messages, such as `feat: add new skill`, `fix: resolve p
 - The skill is documentation only. It has no scripts or tests.
 - It needs the `jev` CLI on `PATH` and `TYPESAFE_API_KEY`. The CLI is not published.
 - Keep the skill in sync with the CLI: when a `jev` command's flags or output fields change, update `SKILL.md` and raise the plugin version.
+
+### quote-check
+- `scripts/quote_check.py` needs only Python 3.10 or later.
+- Run the tests with the skillify runner from the repository root:
+  ```bash
+  plugins/skillify/skills/skillify/scripts/run_tests.sh plugins/quote-check/skills/quote-check
+  ```
+- `tests/fixtures/sample-repo/` holds small synthetic files. The integration test checks fixed line numbers in them.
+  If you edit a fixture, update the line numbers in `tests/integration/eval_fixture_test.sh` and `evals/llm.md`.
+- To pass gate 9 of `validate.sh`, copy the skill to `<temp dir>/.claude/skills/quote-check` and validate the copy.

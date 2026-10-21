@@ -1,0 +1,19 @@
+{
+  "name": "quote-check",
+  "version": "1.0.0",
+  "description": "Checks that each quote a review or investigation report rests on appears verbatim in its file, returns the surrounding lines, and leaves the judgment of the claim to the agent.",
+  "author": {
+    "name": "kanghyun.yang",
+    "url": "https://github.com/ykhfree"
+  },
+  "homepage": "https://github.com/ykhfree/agent-plugins",
+  "repository": "https://github.com/ykhfree/agent-plugins",
+  "license": "MIT",
+  "keywords": [
+    "citation",
+    "quote",
+    "code-review",
+    "verification",
+    "investigation"
+  ]
+}

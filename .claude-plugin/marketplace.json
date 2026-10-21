@@ -43,6 +43,15 @@
       "author": {
         "name": "kanghyun.yang"
       }
+    },
+    {
+      "name": "quote-check",
+      "source": "./plugins/quote-check",
+      "description": "Checks that each quote a review or investigation report rests on appears verbatim in its file, returns the surrounding lines, and leaves the judgment of the claim to the agent.",
+      "version": "1.0.0",
+      "author": {
+        "name": "kanghyun.yang"
+      }
     }
   ]
 }

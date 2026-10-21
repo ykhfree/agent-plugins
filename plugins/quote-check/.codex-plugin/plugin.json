@@ -1,0 +1,37 @@
+{
+  "name": "quote-check",
+  "version": "1.0.0",
+  "description": "Checks that each quote a review or investigation report rests on appears verbatim in its file, returns the surrounding lines, and leaves the judgment of the claim to the agent.",
+  "author": {
+    "name": "kanghyun.yang",
+    "url": "https://github.com/ykhfree"
+  },
+  "homepage": "https://github.com/ykhfree/agent-plugins",
+  "repository": "https://github.com/ykhfree/agent-plugins",
+  "license": "MIT",
+  "keywords": [
+    "citation",
+    "quote",
+    "code-review",
+    "verification",
+    "investigation"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Quote Check",
+    "shortDescription": "Verify the quotes a report cites before you send it",
+    "longDescription": "Checks that each quote a review or investigation report rests on appears verbatim in its file, returns the surrounding lines, and leaves the judgment of the claim to the agent.",
+    "developerName": "kanghyun.yang",
+    "category": "Developer Tools",
+    "capabilities": [
+      "Interactive",
+      "Read"
+    ],
+    "websiteURL": "https://github.com/ykhfree/agent-plugins",
+    "defaultPrompt": [
+      "이 보고서의 인용이 실제 코드와 맞는지 확인해줘",
+      "근거 확인해줘",
+      "quote check"
+    ]
+  }
+}

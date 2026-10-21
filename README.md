@@ -18,6 +18,9 @@ Re-explains a topic in a new form when the user still does not understand: STE p
 ### Jev Delegation (`jev-delegation`)
 Hands narrow judgments to TypeSafe's Jev model through the jev CLI, and says which Jev verdicts to act on and which only advise.
 
+### Quote Check (`quote-check`)
+Checks that each quote a review or investigation report rests on appears verbatim in its file, returns the surrounding lines, and leaves the judgment of the claim to the agent.
+
 ## Installation
 
 The marketplace name is `ykhfree-plugins`. Each agent installs a plugin as `<plugin>@ykhfree-plugins`.
@@ -177,6 +180,32 @@ In Claude Code, you can also call it directly:
 
 - The `jev` CLI on `PATH`. It is not published, so this plugin is useful only where `jev` is installed.
 - `TYPESAFE_API_KEY` in the environment. Every `jev` call is a billed TypeSafe request.
+
+### Quote Check
+
+#### Usage
+
+The agent loads the `quote-check` skill before it sends a code review, investigation, or root-cause report that cites code or docs it did not change.
+You can also ask for it: "인용 확인해줘", "근거 확인", or "quote check".
+
+In Claude Code, you can also call it directly:
+```bash
+/quote-check:quote-check
+```
+
+#### How it works
+
+1. The agent writes each key claim as `{"claim", "file", "quote"}` in a JSON list.
+2. `scripts/quote_check.py` looks for each quote in its file. It ignores whitespace differences and curly quotes.
+3. The script gives each claim one verdict: `found` (with the line range and 15 lines on each side), `fabricated`, or `file_missing`.
+4. The agent reads each `found` section and decides if it supports, contradicts, or does not settle the claim.
+5. The agent reports only supported claims, and labels the claims it could not settle as unverified.
+
+The script does not judge claims. In an eval on the same sections, Claude judged 39 of 39 correctly and a small model judge 34 of 39.
+
+#### Requirements
+
+- Python 3.10 or later. The script uses only the standard library.
 
 ## Contributing
 
