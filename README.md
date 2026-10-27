@@ -178,11 +178,14 @@ In Claude Code, you can also call it directly:
 | Never delegate | Generative work, arithmetic, a few items already in context, real secrets |
 | Jev decides | Verdicts the agent acts on without re-reading the item |
 | Jev advises | Verdicts the agent checks against the source |
+| `scripts/scan_secrets.py` | Scans files before they go to Jev, and prints `path:line: pattern` without the value |
+| `scripts/verdict.py` | Reads one `jev` result and says whether it decides (exit 0) or only advises (exit 1) |
 
 #### Requirements
 
 - The `jev` CLI on `PATH`. It is not published, so this plugin is useful only where `jev` is installed.
 - `TYPESAFE_API_KEY` in the environment. Every `jev` call is a billed TypeSafe request.
+- Python 3.10 or later for the scripts.
 
 ### Quote Check
 
@@ -228,15 +231,17 @@ In Claude Code, you can also call it directly:
 | Part | Content |
 |---|---|
 | Roles | Main session, `deep-reasoner`, `feature-developer`, `fast-worker`, `fast-explorer`, `Explore`, critic, advisor |
-| Routing rules | Five rules, evaluated top to bottom; the first match wins |
-| Search steps | Who searches, by how hard the search is |
-| Advisor rules | When to consult, when not to, and at most 3 consults per task |
+| Step facts | Five rules, evaluated top to bottom; the first match wins |
+| Search facts | Who searches, by how hard the search is |
+| Advisor events | When to consult, when not to, and at most 3 consults per task |
+| `scripts/route.py` | Applies the rules to the facts the agent judged, and stops a 4th advisor consult |
 
 #### Requirements
 
 - Subagents with the role names above. The plugin does not include them.
   If an agent is not installed, the main session does that step itself.
 - An advisor model, such as Claude Code's advisor tool. Without one, the agent asks the user at each consult point.
+- Python 3.10 or later for the script.
 
 ## Contributing
 

@@ -1,0 +1,1 @@
+{"verdict": "ok", "present": 0.97, "on_target": 0.91, "uncertain": false, "box": {"left": 0.7, "top": 0.1, "right": 0.8, "bottom": 0.14}, "click": {"x": 0.75, "y": 0.12}, "click_px": [1080, 104], "image_size": [1440, 866]}

@@ -1,0 +1,1 @@
+{"passages": [{"index": 0, "route": "include", "text": "Set the timeout with --timeout SECONDS."}, {"index": 1, "route": "exclude", "reason": "prompt_injection"}, {"index": 2, "route": "exclude", "reason": "irrelevant", "preview": "Subscribe to our newsletter"}]}

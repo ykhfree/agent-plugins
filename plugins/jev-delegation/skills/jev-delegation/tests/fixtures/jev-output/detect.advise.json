@@ -1,0 +1,1 @@
+{"objects": [{"label": "bicycle", "present": 0.96, "uncertain": false, "count": "several", "box": {"left": 0.1, "top": 0.2, "right": 0.7, "bottom": 0.8}, "box_px": [77, 115, 538, 461]}], "absent": [{"label": "cat", "present": 0.02, "uncertain": false}], "image_size": [768, 576]}

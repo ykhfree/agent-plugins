@@ -1,0 +1,1 @@
+{"verdict": "partial", "exists": 0.52, "uncertain": true, "lines": [{"line": 40, "score": 0.31, "text": "retry 3/3 after 30s"}]}

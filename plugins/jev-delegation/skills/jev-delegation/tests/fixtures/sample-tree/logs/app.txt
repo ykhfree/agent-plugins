@@ -1,0 +1,3 @@
+2026-10-01T10:00:00Z INFO worker started
+2026-10-01T10:00:05Z WARN retry 1/3 after 10s
+2026-10-01T10:00:15Z ERROR upstream timeout after 30s

@@ -1,0 +1,1 @@
+{"verdict": "unverified", "present": 0.95, "on_target": 0.12, "uncertain": false, "box": {"left": 0.4, "top": 0.5, "right": 0.6, "bottom": 0.55}, "click": {"x": 0.5, "y": 0.525}, "click_px": [720, 455], "image_size": [1440, 866]}

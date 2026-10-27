@@ -25,3 +25,6 @@ yarn-debug.log*
 
 # Machine-local agent settings
 settings.local.json
+
+# Python
+__pycache__/

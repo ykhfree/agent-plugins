@@ -86,7 +86,10 @@ Do not add a root `plugin.json` (Agent Plugins format). Codex 0.142.3 ignores it
 │   │   │   └── plugin.json
 │   │   └── skills/
 │   │       └── jev-delegation/
-│   │           └── SKILL.md      # Commands, image rules, and which verdicts to trust
+│   │           ├── SKILL.md      # Commands, image rules, and which verdicts to trust
+│   │           ├── scripts/      # verdict.py, scan_secrets.py (standard library only)
+│   │           ├── tests/        # Shell tests that run_tests.sh finds, and synthetic jev outputs
+│   │           └── evals/
 │   ├── quote-check/
 │   │   ├── .claude-plugin/
 │   │   │   └── plugin.json
@@ -105,7 +108,10 @@ Do not add a root `plugin.json` (Agent Plugins format). Codex 0.142.3 ignores it
 │       │   └── plugin.json
 │       └── skills/
 │           └── orchestration-policy/
-│               └── SKILL.md      # Roles, routing rules, search steps, and advisor rules
+│               ├── SKILL.md      # Roles, and the fact tables for steps, searches, and advisor events
+│               ├── scripts/      # route.py (standard library only)
+│               ├── tests/        # Shell tests that run_tests.sh finds, and a synthetic task log
+│               └── evals/
 ├── AGENTS.md
 ├── CLAUDE.md                     # Imports AGENTS.md
 └── README.md
@@ -300,9 +306,17 @@ Use conventional commit messages, such as `feat: add new skill`, `fix: resolve p
 - To pass gate 9 of `validate.sh`, copy the skill to `<temp dir>/.claude/skills/explain-ladder` and validate the copy.
 
 ### jev-delegation
-- The skill is documentation only. It has no scripts or tests.
 - It needs the `jev` CLI on `PATH` and `TYPESAFE_API_KEY`. The CLI is not published.
-- Keep the skill in sync with the CLI: when a `jev` command's flags or output fields change, update `SKILL.md` and raise the plugin version.
+- `scripts/verdict.py` holds the trust rules ("Jev decides" and "Jev advises"). `scripts/scan_secrets.py` scans content before it goes to Jev. Both need only Python 3.10 or later.
+- The tests never call `jev`. They use the synthetic outputs in `tests/fixtures/jev-output/`, named `<command>.<decide|advise>.json`.
+  The integration test fails if the "Jev decides" list in `SKILL.md` and the decide fixtures name different commands.
+- Secret-like test values are built at run time. Do not commit a fixture that holds one: GitHub push protection can block it.
+- Keep the skill in sync with the CLI: when a `jev` command's flags or output fields change, update `SKILL.md`, `scripts/verdict.py`, and the fixtures, and raise the plugin version.
+- Run the tests with the skillify runner from the repository root:
+  ```bash
+  plugins/skillify/skills/skillify/scripts/run_tests.sh plugins/jev-delegation/skills/jev-delegation
+  ```
+- To pass gate 9 of `validate.sh`, copy the skill to `<temp dir>/.claude/skills/jev-delegation` and validate the copy.
 
 ### quote-check
 - `scripts/quote_check.py` needs only Python 3.10 or later.
@@ -315,7 +329,13 @@ Use conventional commit messages, such as `feat: add new skill`, `fix: resolve p
 - To pass gate 9 of `validate.sh`, copy the skill to `<temp dir>/.claude/skills/quote-check` and validate the copy.
 
 ### orchestration-policy
-- The skill is documentation only. It has no scripts or tests.
 - It is opt-in: its `description` tells the agent to load it only when the user asks. Keep that sentence when you edit the description.
+- `scripts/route.py` holds the rule order, the outcomes, and the advisor budget. `SKILL.md` defines the facts.
+  The integration test fails if a table row in `SKILL.md` and the script give different routes. Change both together.
+- Run the tests with the skillify runner from the repository root:
+  ```bash
+  plugins/skillify/skills/skillify/scripts/run_tests.sh plugins/orchestration-policy/skills/orchestration-policy
+  ```
+- To pass gate 9 of `validate.sh`, copy the skill to `<temp dir>/.claude/skills/orchestration-policy` and validate the copy.
 - The subagents it names (`deep-reasoner`, `feature-developer`, `fast-worker`, `fast-explorer`) are not in this repository.
   Keep the "Roles" table, so a user without them can map each role to an agent of their own.

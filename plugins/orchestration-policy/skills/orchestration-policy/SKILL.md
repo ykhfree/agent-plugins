@@ -1,74 +1,106 @@
 ---
 name: orchestration-policy
-description: An opt-in policy that routes each step of a coding task to the main session, a subagent (deep-reasoner, feature-developer, fast-worker, fast-explorer, Explore), or an advisor model, by five ordered rules plus search and advisor rules. Use only when the user asks for it by name or asks to apply the orchestration policy ("오케스트레이션 정책 적용해", "apply the orchestration policy"). Do not load it on your own.
+description: Use when the user asks for the orchestration policy by name or asks to apply it ("오케스트레이션 정책 적용해", "apply the orchestration policy"). It is an opt-in policy that routes each step of a coding task to the main session, a subagent (deep-reasoner, feature-developer, fast-worker, fast-explorer, Explore), or an advisor model. Use only when the user asks for it. Do not load it on your own.
 ---
 
 # orchestration-policy
 
+## Overview
+Trigger class: (a) verified-success-promotion.
+
 This policy decides who does each step of a task: you (the main session), a subagent, or the advisor.
 After the user invokes it, apply it to every task in the session until the user says to stop.
 
-## Roles
+You judge the facts of a step (LATENT). `scripts/route.py` applies the rules to those facts
+(DETERMINISTIC): the rule order, the outcomes, and the advisor budget live in the script.
+The tables below define each fact and show the outcome the script gives.
+The integration test checks that the tables and the script agree.
+
+Final calls are always yours. Subagents advise.
+
+## When to Use
+- The user asks for this policy by name, or asks to apply the orchestration policy.
+- The user invoked it earlier in this session and has not said to stop.
+
+## When NOT to Use
+- The user has not asked for it. Do not load it on your own, even for a task with many steps.
+- The user said to stop applying it.
+
+## Mandatory Procedure
+The script path is relative to this skill's directory. Python 3.10 or later.
+
+1. LATENT — split the task into steps. Route each step on its own
+   (for example, deep-reasoner picks the design, then you implement it).
+2. LATENT — for each step, decide which facts in "Step facts" hold.
+3. DETERMINISTIC — run `python3 scripts/route.py step FACT...` and follow its `route` and `note`.
+   Exit 1 means no rule matches: check each fact again. Exit 2 means bad input.
+4. LATENT, then DETERMINISTIC — inside any step, before a search, pick the one fact in "Search facts"
+   that holds and run `python3 scripts/route.py search FACT`.
+5. LATENT, then DETERMINISTIC — at each event in "Advisor events", run
+   `python3 scripts/route.py advisor EVENT --consults N`, where N is the number of advisor consults
+   already made in this task. Exit 1 means the budget is spent: ask the user and wait for the answer
+   before you consult again.
+6. LATENT — if a route names a role that has no installed agent, do that step yourself.
+   If no advisor is available, ask the user and wait for the answer where the route says `advisor`.
+
+### Roles
 
 | Role | Use it for |
 |------|------------|
-| You (main session) | Edits you can state exactly, and product behavior with its tests |
-| deep-reasoner | Analysis and designs, when how to solve a problem is still undecided |
-| feature-developer | Product-behavior work with a settled design that splits by context. Writes the tests for its logic |
-| fast-worker | Fully specified work that only needs to be typed out |
-| fast-explorer | Pure location lookups. Returns paths and line numbers |
-| Explore | Read-only searches that trace a flow or need judgment |
-| Critic | Any general agent in a fresh context, told to argue against one option |
-| Advisor | A stronger reviewer model that sees the whole conversation (Claude Code's advisor tool). Judgment only |
+| `main` (you) | Edits you can state exactly, and product behavior with its tests |
+| `deep-reasoner` | Analysis and designs, when how to solve a problem is still undecided |
+| `feature-developer` | Product-behavior work with a settled design that splits by context. Writes the tests for its logic |
+| `fast-worker` | Fully specified work that only needs to be typed out |
+| `fast-explorer` | Pure location lookups. Returns paths and line numbers |
+| `Explore` | Read-only searches that trace a flow or need judgment |
+| `critic` | Any general agent in a fresh context. Give it only the problem and the recommended option, and have it argue against the option |
+| `advisor` | A stronger reviewer model that sees the whole conversation (Claude Code's advisor tool). Judgment only |
+| `user` | Ask the user and wait for the answer |
 
-If no agent with a role is installed, do that step yourself.
-If no advisor is available, ask the user and wait for the answer at each point where a rule says to consult the advisor.
+### Step facts
+Rules are in order. The first rule whose fact holds wins.
 
-## Routing rules
+| Rule | Facts | Holds when | Route |
+|------|-------|------------|-------|
+| 1 | `exact-edit` | You have already read every file the change touches, and you can state the exact edit (file + what changes) in one or two sentences | `main` |
+| 2 | `costly-decision` | The step locks in a costly-to-revert decision (architecture, DB schema, API contracts, migrations, technology choices), and the options are settled | `advisor` |
+| 2 | `costly-decision options-open` | As above, but the options are still open | `deep-reasoner`, then `critic` if it returns two or more options with no clear winner, then `advisor` |
+| 3 | `undecided` | How to solve it is still undecided: root cause unknown after one investigation pass, or two or more viable designs or algorithms | `deep-reasoner` |
+| 4 | `product-behavior` | The change decides what the product does: new or changed behavior, domain rules, edge-case handling | `main` |
+| 4 | `product-behavior splits-by-context` | As above, and the work splits by context: a large part that needs little of your context and returns a compact result, or independent parts that run in parallel | `feature-developer` |
+| 5 | `fully-specified` | The outcome is fully specified and only needs to be typed out: boilerplate, renames, formatting, the same edit across many files, tests whose cases are already listed | `fast-worker` |
 
-Evaluate top to bottom; the first rule that matches wins. Final calls are always yours — subagents advise.
-1. You have already read every file the change touches, and you can state the exact edit
-   (file + what changes) in one or two sentences → do it yourself. Spawning an agent costs more.
-2. The task locks in a costly-to-revert decision (the first item under "Always consult" below)
-   → if the options are still open, design with deep-reasoner. If it returns two or more
-   options with no clear winner, spawn one critic agent in a fresh context — give it only
-   the problem and the recommended option, and have it argue against it. Then consult
-   the advisor with both before committing.
-3. How to solve it is still undecided — root cause unknown after one investigation pass, or two or
-   more viable designs/algorithms to choose between → deep-reasoner.
-4. The change decides what the product does — new or changed behavior, domain rules,
-   edge-case handling → implement it yourself, with its tests. This keeps the context you built in one loop.
-   Delegate to feature-developer only if the work splits by context: a large part that needs
-   little of your context and returns a compact result, or independent parts that run in parallel.
-5. The outcome is fully specified and only needs to be typed out — boilerplate, renames, formatting,
-   the same edit across many files, tests whose cases are already listed → fast-worker.
+### Search facts
 
-A task that spans several rules is split into steps, each routed on its own
-(e.g. deep-reasoner picks the design → you implement it).
+| Facts | Holds when | Route |
+|-------|------------|-------|
+| `few-calls` | One or two grep or glob calls will find it | `main` |
+| `locate` | Locating where something lives (file, symbol, config key, keyword) across many places | `fast-explorer` |
+| `trace` | Tracing a flow, or a search that needs judgment | `Explore` |
+| `why` | Understanding why something happens | `deep-reasoner` |
 
-## Search steps
-
-Inside any task:
-- One or two grep/glob calls will find it → search yourself.
-- Locating where something lives (file, symbol, config key, keyword) across many places → fast-explorer.
-- Tracing a flow or a search that needs judgment → Explore.
-- Understanding why something happens → deep-reasoner (rule 3).
-
-## Advisor rules
-
+### Advisor events
 The advisor is for judgment only. Never delegate code writing, exploration, or testing to it.
 
-Always consult:
-- Before locking in a costly-to-revert decision (architecture, DB schema, API contracts, migrations, technology choices)
-- Before finalizing a large plan (including before exiting plan mode)
-- When the same error reappears after two genuinely different fix attempts
-- Before declaring a long task, or any hard-to-revert work such as a deploy or migration, "done"
+| Facts | Holds when | Route |
+|-------|------------|-------|
+| `costly-decision` | Before you lock in a costly-to-revert decision | `advisor` |
+| `large-plan` | Before you finalize a large plan, including before you exit plan mode | `advisor` |
+| `repeat-error` | The same error reappears after two genuinely different fix attempts | `advisor` |
+| `declare-done` | Before you declare a long task, or hard-to-revert work such as a deploy or migration, done | `advisor` |
+| `trivial` | Trivial edits, straightforward implementation of a settled design, or questions a docs lookup can answer | none |
+| `rephrase` | Re-asking the same question in different words | none |
 
-Never consult for:
-- Trivial edits, straightforward implementation of an already-settled design, or questions a docs lookup can answer
-- Re-asking the same question in different words
+At most 3 consults per task. The script returns `user` for a 4th consult.
 
-Operating rules:
-- Max 3 consults per task. If more seem necessary, ask the user first.
-- Follow the advice by default, but if it conflicts with file contents or test results, don't follow it; report the conflict to the user instead.
-- Subagents do not consult the advisor directly. If they need a judgment call, they put the open question in their final report for the main session to decide.
+Follow the advice by default. If it conflicts with file contents or test results, do not follow it.
+Report the conflict to the user instead.
+Subagents do not consult the advisor directly. If they need a judgment call, they put the open
+question in their final report for the main session to decide.
+
+## Relationship to other skills
+- The subagents it names (`deep-reasoner`, `feature-developer`, `fast-worker`, `fast-explorer`) are
+  not part of this plugin. Map each role in "Roles" to an agent of your own.
+- The skillify duplicate audit found no other skill that routes work between the main session,
+  subagents, and an advisor. Its keyword hits (`subagent`, `advisor`, `routing`, `delegate`) are
+  generic words in skills for other jobs.

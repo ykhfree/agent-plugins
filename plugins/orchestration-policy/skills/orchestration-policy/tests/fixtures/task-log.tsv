@@ -1,0 +1,12 @@
+# One synthetic task, step by step: the call, then the expected exit and route.
+# kind	args	exit	route
+search	locate	0	fast-explorer
+step	undecided	0	deep-reasoner
+advisor	large-plan --consults 0	0	advisor
+step	costly-decision options-open	0	deep-reasoner,critic,advisor
+advisor	costly-decision --consults 1	0	advisor
+step	product-behavior	0	main
+step	fully-specified	0	fast-worker
+advisor	repeat-error --consults 2	0	advisor
+advisor	declare-done --consults 3	1	user
+step	exact-edit fully-specified	0	main
