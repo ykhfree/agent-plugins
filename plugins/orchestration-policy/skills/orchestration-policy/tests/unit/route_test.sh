@@ -48,8 +48,8 @@ run 0 search locate;    route_is '"search"' '["fast-explorer"]'
 run 0 search few-calls; route_is '"search"' '["main"]'
 run 0 search why;       route_is '"search"' '["deep-reasoner"]'
 
-# 5) policy stop: no step fact holds.
-run 1 step;             route_is None '[]'
+# 5) default: no step fact holds, so the step is yours.
+run 0 step;             route_is '"default"' '["main"]'
 
 # 6) failure: bad input exits 2 with no stdout.
 run 2 step options-open

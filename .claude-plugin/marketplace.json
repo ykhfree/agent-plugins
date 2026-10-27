@@ -57,7 +57,7 @@
       "name": "orchestration-policy",
       "source": "./plugins/orchestration-policy",
       "description": "An opt-in policy that routes each step of a coding task to the main session, a subagent, or an advisor model, by ordered rules. Loads only when the user asks for it.",
-      "version": "1.1.0",
+      "version": "1.1.1",
       "author": {
         "name": "kanghyun.yang"
       }

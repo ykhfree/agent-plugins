@@ -33,7 +33,7 @@ The script path is relative to this skill's directory. Python 3.10 or later.
    (for example, deep-reasoner picks the design, then you implement it).
 2. LATENT — for each step, decide which facts in "Step facts" hold.
 3. DETERMINISTIC — run `python3 scripts/route.py step FACT...` and follow its `route` and `note`.
-   Exit 1 means no rule matches: check each fact again. Exit 2 means bad input.
+   If no fact holds, the script returns the default route, `main`. Exit 2 means bad input.
 4. LATENT, then DETERMINISTIC — inside any step, before a search, pick the one fact in "Search facts"
    that holds and run `python3 scripts/route.py search FACT`.
 5. LATENT, then DETERMINISTIC — at each event in "Advisor events", run
@@ -69,6 +69,7 @@ Rules are in order. The first rule whose fact holds wins.
 | 4 | `product-behavior` | The change decides what the product does: new or changed behavior, domain rules, edge-case handling | `main` |
 | 4 | `product-behavior splits-by-context` | As above, and the work splits by context: a large part that needs little of your context and returns a compact result, or independent parts that run in parallel | `feature-developer` |
 | 5 | `fully-specified` | The outcome is fully specified and only needs to be typed out: boilerplate, renames, formatting, the same edit across many files, tests whose cases are already listed | `fast-worker` |
+| default | none | No rule above matches: answering a question, running tests, committing, reporting | `main` |
 
 ### Search facts
 

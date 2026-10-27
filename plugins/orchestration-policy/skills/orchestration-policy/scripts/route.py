@@ -11,8 +11,9 @@ Input:  argv, one of
 Output: one JSON object on stdout, {"rule", "route", "note"}.
         route: the roles to use, in order (main, deep-reasoner, critic, advisor, feature-developer,
         fast-worker, fast-explorer, Explore, user). An empty route means "do not consult".
-Exit:   0 follow the route, 1 the policy stops you (no rule matches, or the advisor budget is
-        spent and you must ask the user), 2 bad input (message on stderr as "route: <message>").
+        A step that matches no rule gets the default route, main.
+Exit:   0 follow the route, 1 the advisor budget is spent and you must ask the user,
+        2 bad input (message on stderr as "route: <message>").
 """
 
 import json
@@ -64,7 +65,7 @@ def step(facts: list[str]) -> tuple[int, dict]:
             return 0, {"rule": number, "route": ["main"], "note": "implement it yourself, with its tests"}
         return 0, {"rule": number, "route": ["fast-worker"], "note": "the outcome is fully specified"}
 
-    return 1, {"rule": None, "route": [], "note": "no routing rule matches; check each fact against SKILL.md again"}
+    return 0, {"rule": "default", "route": ["main"], "note": "no rule matches; do it yourself"}
 
 
 def search(facts: list[str]) -> tuple[int, dict]:
