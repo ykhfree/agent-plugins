@@ -21,6 +21,9 @@ Hands narrow judgments to TypeSafe's Jev model through the jev CLI, and says whi
 ### Quote Check (`quote-check`)
 Checks that each quote a review or investigation report rests on appears verbatim in its file, returns the surrounding lines, and leaves the judgment of the claim to the agent.
 
+### Orchestration Policy (`orchestration-policy`)
+An opt-in policy that routes each step of a coding task to the main session, a subagent, or an advisor model, by ordered rules. Loads only when the user asks for it.
+
 ## Installation
 
 The marketplace name is `ykhfree-plugins`. Each agent installs a plugin as `<plugin>@ykhfree-plugins`.
@@ -206,6 +209,34 @@ The script does not judge claims. In an eval on the same sections, Claude judged
 #### Requirements
 
 - Python 3.10 or later. The script uses only the standard library.
+
+### Orchestration Policy
+
+#### Usage
+
+The skill loads only when you ask for it. Its description tells the agent not to load it on its own.
+Ask in natural language, for example "오케스트레이션 정책 적용해" or "apply the orchestration policy".
+After it loads, the agent applies it to every task in the session until you say to stop.
+
+In Claude Code, you can also call it directly:
+```bash
+/orchestration-policy:orchestration-policy
+```
+
+#### What it covers
+
+| Part | Content |
+|---|---|
+| Roles | Main session, `deep-reasoner`, `feature-developer`, `fast-worker`, `fast-explorer`, `Explore`, critic, advisor |
+| Routing rules | Five rules, evaluated top to bottom; the first match wins |
+| Search steps | Who searches, by how hard the search is |
+| Advisor rules | When to consult, when not to, and at most 3 consults per task |
+
+#### Requirements
+
+- Subagents with the role names above. The plugin does not include them.
+  If an agent is not installed, the main session does that step itself.
+- An advisor model, such as Claude Code's advisor tool. Without one, the agent asks the user at each consult point.
 
 ## Contributing
 

@@ -16,6 +16,7 @@ Current plugins:
 - **explain-ladder**: Re-explains a topic in a new form (prose, ASCII diagram, 2D or 3D HTML page, video) when the user still does not understand
 - **jev-delegation**: Says when to hand a narrow judgment to TypeSafe's Jev through the `jev` CLI, and which verdicts to trust
 - **quote-check**: Checks that the quotes a review or investigation report cites appear verbatim in their files, before the report goes out
+- **orchestration-policy**: An opt-in policy that routes each step of a task to the main session, a subagent, or an advisor model
 
 ## Compatibility
 
@@ -86,17 +87,25 @@ Do not add a root `plugin.json` (Agent Plugins format). Codex 0.142.3 ignores it
 │   │   └── skills/
 │   │       └── jev-delegation/
 │   │           └── SKILL.md      # Commands, image rules, and which verdicts to trust
-│   └── quote-check/
+│   ├── quote-check/
+│   │   ├── .claude-plugin/
+│   │   │   └── plugin.json
+│   │   ├── .codex-plugin/
+│   │   │   └── plugin.json
+│   │   └── skills/
+│   │       └── quote-check/
+│   │           ├── SKILL.md
+│   │           ├── scripts/      # quote_check.py (standard library only)
+│   │           ├── tests/        # Shell tests that run_tests.sh finds, and a sample repository
+│   │           └── evals/
+│   └── orchestration-policy/
 │       ├── .claude-plugin/
 │       │   └── plugin.json
 │       ├── .codex-plugin/
 │       │   └── plugin.json
 │       └── skills/
-│           └── quote-check/
-│               ├── SKILL.md
-│               ├── scripts/      # quote_check.py (standard library only)
-│               ├── tests/        # Shell tests that run_tests.sh finds, and a sample repository
-│               └── evals/
+│           └── orchestration-policy/
+│               └── SKILL.md      # Roles, routing rules, search steps, and advisor rules
 ├── AGENTS.md
 ├── CLAUDE.md                     # Imports AGENTS.md
 └── README.md
@@ -304,3 +313,9 @@ Use conventional commit messages, such as `feat: add new skill`, `fix: resolve p
 - `tests/fixtures/sample-repo/` holds small synthetic files. The integration test checks fixed line numbers in them.
   If you edit a fixture, update the line numbers in `tests/integration/eval_fixture_test.sh` and `evals/llm.md`.
 - To pass gate 9 of `validate.sh`, copy the skill to `<temp dir>/.claude/skills/quote-check` and validate the copy.
+
+### orchestration-policy
+- The skill is documentation only. It has no scripts or tests.
+- It is opt-in: its `description` tells the agent to load it only when the user asks. Keep that sentence when you edit the description.
+- The subagents it names (`deep-reasoner`, `feature-developer`, `fast-worker`, `fast-explorer`) are not in this repository.
+  Keep the "Roles" table, so a user without them can map each role to an agent of their own.
