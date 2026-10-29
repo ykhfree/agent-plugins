@@ -71,7 +71,40 @@ out="$(printf 'sk-ant-%s\n' "$fill" | "$scan" - || true)"
 has "<stdin>:1: anthropic-api-key"
 [[ "$out" != *"openai-api-key"* ]] || { echo "sk-ant- must not count as an OpenAI key: $out" >&2; exit 1; }
 
-# 6) failure: a missing path or no arguments exits 2 with no stdout.
+# 6) hits: token formats and assignment values that the first version missed.
+dollar_pw='Fake$Passw0rd123'
+{
+  printf 'DB_PASSWORD=%s\n' "$dollar_pw"
+  printf 'DATABASE_URL=postgres://admin:%s@db.example.com:5432/app\n' "${fill:0:12}"
+  printf 'GITLAB=glpat-%s\n' "${fill:0:20}"
+  printf 'STRIPE=sk_live_%s\n' "${fill:0:24}"
+  printf 'HF=hf_%s\n' "${fill:0:34}"
+  printf 'NPM=npm_%s\n' "${fill:0:36}"
+  printf 'Authorization: Bearer %s\n' "${fill:0:32}"
+} > formats.txt
+run 1 formats.txt
+has "formats.txt:1: secret-assignment"
+has "formats.txt:2: url-credentials"
+has "formats.txt:3: gitlab-token"
+has "formats.txt:4: stripe-key"
+has "formats.txt:5: huggingface-token"
+has "formats.txt:6: npm-token"
+has "formats.txt:7: bearer-token"
+[[ "$out" != *"$dollar_pw"* && "$out" != *"$fill"* ]] || { echo "value printed: $out" >&2; exit 1; }
+
+# 7) boundary: variable references, URLs without a password, short bearer values, and prose stay clean.
+{
+  printf 'TOKEN=$GITHUB_TOKEN\n'
+  printf 'password: "${{ secrets.DB_PASSWORD }}"\n'
+  printf 'DATABASE_URL=postgres://admin:${DB_PASSWORD}@db.example.com/app\n'
+  printf 'clone git@github.com:owner/repo.git or ssh://git@host:22/repo\n'
+  printf 'Authorization: Bearer short\n'
+  printf 'password_hint = "see the team vault"\n'
+  printf '"    fresh.token = freshToken\\n"\n'
+} > refs.txt
+run 0 refs.txt
+
+# 8) failure: a missing path or no arguments exits 2 with no stdout.
 run 2 no-such-file.txt
 [[ -z "$out" ]] || { echo "bad input must print nothing on stdout" >&2; exit 1; }
 run 2

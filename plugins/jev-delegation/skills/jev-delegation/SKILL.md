@@ -45,6 +45,8 @@ The script paths are relative to this skill's directory.
    `python3 scripts/scan_secrets.py PATH...` (`-` reads stdin, for `rank` candidates).
    Exit 0 = no hits. Exit 1 = hits, printed as `path:line: pattern` without the value.
    Exit 2 = bad input.
+   The scan does not catch a secret value that contains spaces, such as a passphrase.
+   If you know that the content holds one, do not send it.
 3. LATENT — if step 2 found hits, decide from the path and the pattern name whether each hit is a
    throwaway test value (a fixture, a test data directory). Do not open the line to look at the value.
    A hit in a file that jev refuses by name (`.env`, `.env.*`, `*.pem`, `*.key`, `*.p12`, `*.pfx`,

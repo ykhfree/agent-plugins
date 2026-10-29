@@ -29,13 +29,24 @@ PATTERNS = [
     ("slack-token", re.compile(r"\bxox[abprs]-[A-Za-z0-9-]{10,}")),
     ("google-api-key", re.compile(r"\bAIza[0-9A-Za-z_-]{35}")),
     ("jwt", re.compile(r"\beyJ[A-Za-z0-9_-]{10,}\.eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}")),
+    ("gitlab-token", re.compile(r"\bglpat-[A-Za-z0-9_-]{20,}")),
+    ("stripe-key", re.compile(r"\b[rs]k_live_[A-Za-z0-9]{20,}")),
+    ("huggingface-token", re.compile(r"\bhf_[A-Za-z0-9]{30,}")),
+    ("npm-token", re.compile(r"\bnpm_[A-Za-z0-9]{36}")),
+    ("bearer-token", re.compile(r"(?i)\bbearer\s+[A-Za-z0-9._~+/-]{20,}")),
+    # A URL with a user and a password before the host. A password that starts with "$"
+    # is a variable reference.
+    ("url-credentials", re.compile(r"(?i)\b[a-z][a-z0-9+.-]*://[^\s:/@]+:(?!\$)[^\s/@]{3,}@")),
     # NAME = value, as in .env files and config. The value must end the assignment, so
     # code such as `token = request.headers.get(...)` or `os.environ["X"]` does not match.
+    # A value that starts with "$" is a variable reference. A value with a backslash is an
+    # escape in a code string. A value with spaces is not matched, because prose such as
+    # `password_hint = "see the team vault"` looks the same.
     (
         "secret-assignment",
         re.compile(
             r"(?i)\b[a-z0-9_]*(?:secret|token|password|passwd|api_?key|private_?key)[a-z0-9_]*"
-            r"[\"']?\s*[:=]\s*[\"']?[A-Za-z0-9_\-+/=.@~!%^&*]{8,}[\"']?\s*(?:[,;]|#.*)?$"
+            r"[\"']?\s*[:=]\s*[\"']?(?!\$)[^\s\"'`()\[\]{}<>,;#\\]{8,}[\"']?\s*(?:[,;]|#.*)?$"
         ),
     ),
 ]
