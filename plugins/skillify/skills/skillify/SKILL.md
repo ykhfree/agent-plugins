@@ -72,7 +72,11 @@ At least one test under `tests/integration/` MUST exercise the script against a 
 - `evals/resolver.md` — three positive trigger cases (must route to the new skill) and three negative cases (must NOT route, e.g., trivial typo fix).
 
 ### Step 10 — Register the resolver trigger
-Add the trigger phrases to the `description:` frontmatter of the new skill. If the trigger needs to fire on hook events (e.g., "after second occurrence of same error"), add a corresponding `UserPromptSubmit` or `PostToolUse` hook to `.codex/hooks.json` for Codex or `settings.json` for Claude Code. Validate the changed JSON with `jq empty <path>` so malformed JSON cannot break hook loading.
+Add the trigger phrases to the `description:` frontmatter of the new skill. If the trigger needs to fire on hook events (e.g., "after second occurrence of same error"), add a corresponding `UserPromptSubmit` or `PostToolUse` hook to `.codex/hooks.json` for Codex or `settings.json` for Claude Code. A hook runs its command automatically on every matching event, so get approval first:
+1. Show the user the exact JSON entry, the file path you will change, and the command that the hook runs.
+2. Ask the user and wait for the answer.
+3. If the user does not approve, do not write the hook. Record in the new skill's `SKILL.md` that the trigger is description-only.
+4. If the user approves, write the hook. Validate the changed JSON with `jq empty <path>` so malformed JSON cannot break hook loading.
 
 ### Step 11 — Run the deterministic gate
 ```bash

@@ -1,6 +1,6 @@
 {
   "name": "skillify",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Turns a validated solution or a recurring failure into a permanent skill with scripts, tests, evals, and a deterministic validation gate.",
   "author": {
     "name": "kanghyun.yang",

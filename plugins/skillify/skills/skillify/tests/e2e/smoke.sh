@@ -26,8 +26,9 @@ mkdir -p "$tmp_root/.claude/skills"
 target="$tmp_root/.claude/skills/$proposed"
 trap 'rm -rf "$tmp_root"' EXIT
 
-# Step 3: DRY audit.
-"$audit" "$proposed" "smoke" >/dev/null
+# Step 3: DRY audit. The keyword is the per-run name, so skills installed on the
+# machine cannot reach the overlap threshold (a common word such as "smoke" can).
+"$audit" "$proposed" "$proposed" >/dev/null
 
 # Step 6: scaffold.
 "$scaffold" "$target" >/dev/null
