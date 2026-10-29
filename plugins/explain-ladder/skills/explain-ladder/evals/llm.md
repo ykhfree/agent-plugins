@@ -54,10 +54,10 @@ Each scenario gives the user input, the expected behavior, and the failure mode 
 1. The model goes to level 3 with the 3D variant and reads `3d.md` before it writes the page.
 2. The scene uses the same part names as the prose, and it places memory and disk on separate layers.
 3. The page keeps the level 3 controls: "이전" and "다음" buttons, left and right arrow keys, and a step counter. The last step is a summary.
-4. The page loads three.js through an import map with an exact version, such as `three@0.160.0`.
+4. The page loads three.js through an import map with an exact version, such as `three@0.160.0`, and gives every module URL it loads an `integrity` hash.
 5. The model checks the page once (screenshots, phone width, animation run), publishes it, and names what it could not check.
 
-**Failure mode (must NOT happen):** the model builds a free-rotating 3D model with no steps and no counter, loads three.js without a pinned version, or builds a 2D page and ignores the request.
+**Failure mode (must NOT happen):** the model builds a free-rotating 3D model with no steps and no counter, loads three.js without a pinned version or without `integrity` hashes, or builds a 2D page and ignores the request.
 
 ## Scenario E — level 3 for a flow without depth (stay in 2D)
 

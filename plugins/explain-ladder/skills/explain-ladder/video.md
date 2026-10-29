@@ -12,9 +12,11 @@ Paths in this file are relative to this skill's directory, unless they start wit
 - If the venv is missing, recreate it:
   ```
   /opt/homebrew/bin/python3.13 -m venv ~/.venvs/explain-video
-  ~/.venvs/explain-video/bin/pip install --only-binary=:all: --no-binary=pycairo,srt manim==0.22.0 pytest
+  ~/.venvs/explain-video/bin/pip install --only-binary=:all: --no-binary=pycairo,srt manim==0.22.0 'pillow>=13' pytest
   ```
   `pycairo` and `srt` ship only as source on PyPI, so they build locally.
+  `pillow>=13` is a security floor: Pillow 12.x has known image-decoder vulnerabilities, and manim 0.22.0 accepts any Pillow 11.0 or later.
+  For an existing venv, run `~/.venvs/explain-video/bin/pip install -U 'pillow>=13'`.
 
 ## Files
 ```

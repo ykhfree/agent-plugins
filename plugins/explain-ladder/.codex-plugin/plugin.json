@@ -1,6 +1,6 @@
 {
   "name": "explain-ladder",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Re-explains a topic in a new form when the user still does not understand: STE prose, then an ASCII diagram, then a step-by-step HTML page (2D, or a 3D scene for topics with depth), then a narrated video.",
   "author": {
     "name": "kanghyun.yang",
