@@ -11,7 +11,6 @@ Each plugin is versioned on its own and lives in its own directory under `plugin
 **Repository**: https://github.com/ykhfree/agent-plugins
 
 Current plugins:
-- **pr-comment**: Analyzes GitHub PR comments and categorizes them by priority
 - **skillify**: Turns a validated solution or a recurring failure into a permanent skill with scripts, tests, and evals
 - **explain-ladder**: Re-explains a topic in a new form (prose, ASCII diagram, 2D or 3D HTML page, video) when the user still does not understand
 - **jev-delegation**: Says when to hand a narrow judgment to TypeSafe's Jev through the `jev` CLI, and which verdicts to trust
@@ -46,22 +45,14 @@ Do not add a root `plugin.json` (Agent Plugins format). Codex 0.142.3 ignores it
 │   └── plugins/
 │       └── marketplace.json      # Marketplace for Codex (same plugins, adds policy and category)
 ├── plugins/
-│   ├── pr-comment/
+│   ├── skillify/
 │   │   ├── .claude-plugin/
 │   │   │   └── plugin.json       # Plugin metadata for Claude Code and Copilot CLI
 │   │   ├── .codex-plugin/
 │   │   │   └── plugin.json       # Plugin metadata for Codex (adds skills and interface)
 │   │   └── skills/
-│   │       └── pr-review/
-│   │           └── SKILL.md      # Skill instructions
-│   ├── skillify/
-│   │   ├── .claude-plugin/
-│   │   │   └── plugin.json
-│   │   ├── .codex-plugin/
-│   │   │   └── plugin.json
-│   │   └── skills/
 │   │       └── skillify/
-│   │           ├── SKILL.md
+│   │           ├── SKILL.md      # Skill instructions
 │   │           ├── scripts/      # Bash scripts that the skill runs
 │   │           ├── tests/        # Tests of skillify itself
 │   │           └── evals/
@@ -205,7 +196,7 @@ Every plugin must work in every supported agent. Follow these rules:
 Only Claude Code puts the plugin name in front of a skill name (`/plugin-name:skill-name`).
 Copilot CLI and the skills CLI show the bare skill name, so a generic name such as `review` can clash with another skill.
 Give each skill a name that is clear without the plugin name, and keep it short.
-Example: plugin `pr-comment` with skill `pr-review` runs as `/pr-comment:pr-review` in Claude Code and appears as `pr-review` elsewhere.
+Example: a plugin `pr-tools` with a skill `pr-review` runs as `/pr-tools:pr-review` in Claude Code and appears as `pr-review` elsewhere.
 
 ## Metadata Synchronization
 
@@ -277,11 +268,6 @@ This checks only that Copilot parses the files. To check that the skills load, p
 Use conventional commit messages, such as `feat: add new skill`, `fix: resolve parsing issue`, or `docs: update README`.
 
 ## Plugin Notes
-
-### pr-comment
-- Requires the GitHub CLI (`gh`), authenticated with `gh auth login`.
-- For a GitHub Enterprise host, the skill sets `GH_HOST`. `gh pr` has no `--hostname` option.
-- The categorization and priority rules are in `plugins/pr-comment/skills/pr-review/SKILL.md`.
 
 ### skillify
 - The scripts are Bash. `scripts/validate.sh` also needs Python 3.

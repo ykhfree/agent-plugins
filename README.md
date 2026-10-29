@@ -6,9 +6,6 @@ A collection of plugins for AI coding agents. One repository works with Claude C
 
 ## Available Plugins
 
-### PR Comment Review (`pr-comment`)
-Analyzes all comments on a GitHub PR and organizes unresolved items by priority.
-
 ### Skillify (`skillify`)
 Turns a validated solution or a recurring failure into a permanent skill with scripts, tests, evals, and a deterministic validation gate.
 
@@ -31,19 +28,19 @@ The marketplace name is `ykhfree-plugins`. Each agent installs a plugin as `<plu
 ### Claude Code
 ```bash
 /plugin marketplace add ykhfree/agent-plugins
-/plugin install pr-comment@ykhfree-plugins
+/plugin install skillify@ykhfree-plugins
 ```
 
 ### Codex
 ```bash
 codex plugin marketplace add ykhfree/agent-plugins
-codex plugin add pr-comment@ykhfree-plugins
+codex plugin add skillify@ykhfree-plugins
 ```
 
 ### GitHub Copilot CLI
 ```bash
 copilot plugin marketplace add ykhfree/agent-plugins
-copilot plugin install pr-comment@ykhfree-plugins
+copilot plugin install skillify@ykhfree-plugins
 ```
 
 ### Other agents (Cursor, Gemini CLI, and more)
@@ -53,43 +50,6 @@ npx skills add ykhfree/agent-plugins
 ```
 
 ## Plugin Documentation
-
-### PR Comment Review
-
-#### Usage
-
-Ask in natural language, for example "Review the comments on PR 123".
-The agent picks the `pr-review` skill from its description.
-
-In Claude Code, you can also call it directly:
-```bash
-/pr-comment:pr-review                                  # PR for the current branch
-/pr-comment:pr-review feature/login                    # PR for a specific branch
-/pr-comment:pr-review 123                              # PR number
-/pr-comment:pr-review github.mycompany.com:feature/login   # GitHub Enterprise host
-```
-
-#### Features
-
-**PR Comment Analysis**
-- Review threads (suggestions/requests)
-- General comments
-- Automatic filtering of resolved comments
-
-**Automatic Categorization**
-- 🔧 Fix Required: Bugs, logic errors, mandatory changes
-- 💬 Response Needed: Questions, explanation requests
-- 💡 Suggestion: Improvement suggestions, refactoring
-- 👍 Praise: Positive feedback
-
-**Priority Sorting**
-- Automatically categorized as High, Medium, or Low
-
-#### Requirements
-
-- GitHub CLI (`gh`) installed
-- Git installed
-- GitHub account authenticated (`gh auth login`)
 
 ### Skillify
 
@@ -125,7 +85,7 @@ Bundled scripts:
 
 - Bash
 - Python 3 (`scripts/validate.sh` uses it to parse `SKILL.md` and the evals)
-- `jq`, if you add a hook to a JSON settings file
+- `jq`, if you add a hook to a JSON settings file. The skill shows you the hook and waits for your approval before it writes one.
 
 ### Explain Ladder
 
@@ -152,8 +112,8 @@ In Claude Code, you can also call it directly:
 #### Requirements
 
 - Python 3 for `scripts/check_diagram.py` (standard library only)
-- Level 3, 3D variant: nothing to install. The page loads three.js 0.160.0 from cdn.jsdelivr.net
-- Level 4 only: macOS, Homebrew `ffmpeg`, `cairo`, `pango`, `pkg-config`, and a Python 3.13 venv with Manim 0.22.0.
+- Level 3, 3D variant: nothing to install. The page loads three.js 0.160.0 from cdn.jsdelivr.net, checked with `integrity` hashes
+- Level 4 only: macOS, Homebrew `ffmpeg`, `cairo`, `pango`, `pkg-config`, and a Python 3.13 venv with Manim 0.22.0 and Pillow 13 or later.
   `skills/explain-ladder/video.md` has the setup commands.
 
 ### Jev Delegation

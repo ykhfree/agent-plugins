@@ -5,18 +5,6 @@
   },
   "plugins": [
     {
-      "name": "pr-comment",
-      "source": {
-        "source": "local",
-        "path": "./plugins/pr-comment"
-      },
-      "policy": {
-        "installation": "AVAILABLE",
-        "authentication": "ON_INSTALL"
-      },
-      "category": "Developer Tools"
-    },
-    {
       "name": "skillify",
       "source": {
         "source": "local",
