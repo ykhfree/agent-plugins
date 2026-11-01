@@ -1,6 +1,6 @@
 # One synthetic task, step by step: the call, then the expected exit and route.
 # kind	args	exit	route
-search	locate	0	fast-explorer
+search	locate	0	Explore
 step	undecided	0	deep-reasoner
 advisor	large-plan --consults 0	0	advisor
 step	costly-decision options-open	0	deep-reasoner,critic,advisor

@@ -10,7 +10,7 @@ Input:  argv, one of
         SKILL.md defines when each fact or event holds.
 Output: one JSON object on stdout, {"rule", "route", "note"}.
         route: the roles to use, in order (main, deep-reasoner, critic, advisor, feature-developer,
-        fast-worker, fast-explorer, Explore, user). An empty route means "do not consult".
+        fast-worker, Explore, flow-tracer, user). An empty route means "do not consult".
         A step that matches no rule gets the default route, main.
 Exit:   0 follow the route, 1 the advisor budget is spent and you must ask the user,
         2 bad input (message on stderr as "route: <message>").
@@ -26,7 +26,7 @@ STEP_FACTS = ("exact-edit", "costly-decision", "undecided", "product-behavior", 
 # A modifier changes the outcome of the rule it belongs to.
 MODIFIERS = {"options-open": "costly-decision", "splits-by-context": "product-behavior"}
 
-SEARCH = {"few-calls": "main", "locate": "fast-explorer", "trace": "Explore", "why": "deep-reasoner"}
+SEARCH = {"few-calls": "main", "locate": "Explore", "trace": "flow-tracer", "why": "deep-reasoner"}
 ADVISOR_ALWAYS = ("costly-decision", "large-plan", "repeat-error", "declare-done")
 ADVISOR_NEVER = ("trivial", "rephrase")
 

@@ -323,5 +323,5 @@ Use conventional commit messages, such as `feat: add new skill`, `fix: resolve p
   plugins/skillify/skills/skillify/scripts/run_tests.sh plugins/orchestration-policy/skills/orchestration-policy
   ```
 - To pass gate 9 of `validate.sh`, copy the skill to `<temp dir>/.claude/skills/orchestration-policy` and validate the copy.
-- The subagents it names (`deep-reasoner`, `feature-developer`, `fast-worker`, `fast-explorer`) are not in this repository.
+- The subagents it names (`deep-reasoner`, `feature-developer`, `fast-worker`, `flow-tracer`) are not in this repository. `Explore` is Claude Code's built-in search agent.
   Keep the "Roles" table, so a user without them can map each role to an agent of their own.

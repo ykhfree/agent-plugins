@@ -44,7 +44,8 @@ run 1 advisor declare-done --consults 3; route_is '"advisor"' '["user"]'
 run 0 advisor trivial --consults 9;      route_is '"advisor"' '[]'
 
 # 4) search facts.
-run 0 search locate;    route_is '"search"' '["fast-explorer"]'
+run 0 search locate;    route_is '"search"' '["Explore"]'
+run 0 search trace;     route_is '"search"' '["flow-tracer"]'
 run 0 search few-calls; route_is '"search"' '["main"]'
 run 0 search why;       route_is '"search"' '["deep-reasoner"]'
 

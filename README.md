@@ -190,7 +190,7 @@ In Claude Code, you can also call it directly:
 
 | Part | Content |
 |---|---|
-| Roles | Main session, `deep-reasoner`, `feature-developer`, `fast-worker`, `fast-explorer`, `Explore`, critic, advisor |
+| Roles | Main session, `deep-reasoner`, `feature-developer`, `fast-worker`, `Explore`, `flow-tracer`, critic, advisor |
 | Step facts | Five rules, evaluated top to bottom; the first match wins. If none matches, the main session does the step |
 | Search facts | Who searches, by how hard the search is |
 | Advisor events | When to consult, when not to, and at most 3 consults per task |

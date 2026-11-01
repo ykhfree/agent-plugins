@@ -1,6 +1,6 @@
 ---
 name: orchestration-policy
-description: Use when the user asks for the orchestration policy by name or asks to apply it ("오케스트레이션 정책 적용해", "apply the orchestration policy"). It is an opt-in policy that routes each step of a coding task to the main session, a subagent (deep-reasoner, feature-developer, fast-worker, fast-explorer, Explore), or an advisor model. Use only when the user asks for it. Do not load it on your own.
+description: Use when the user asks for the orchestration policy by name or asks to apply it ("오케스트레이션 정책 적용해", "apply the orchestration policy"). It is an opt-in policy that routes each step of a coding task to the main session, a subagent (deep-reasoner, feature-developer, fast-worker, Explore, flow-tracer), or an advisor model. Use only when the user asks for it. Do not load it on your own.
 ---
 
 # orchestration-policy
@@ -51,8 +51,8 @@ The script path is relative to this skill's directory. Python 3.10 or later.
 | `deep-reasoner` | Analysis and designs, when how to solve a problem is still undecided |
 | `feature-developer` | Product-behavior work with a settled design that splits by context. Writes the tests for its logic |
 | `fast-worker` | Fully specified work that only needs to be typed out |
-| `fast-explorer` | Pure location lookups. Returns paths and line numbers |
-| `Explore` | Read-only searches that trace a flow or need judgment |
+| `Explore` | Broad read-only searches: locating where something lives, or sweeping many files and naming conventions when only the conclusion is needed. Returns `path:line` findings |
+| `flow-tracer` | Read-only searches that trace a flow or need judgment |
 | `critic` | Any general agent in a fresh context. Give it only the problem and the recommended option, and have it argue against the option |
 | `advisor` | A stronger reviewer model that sees the whole conversation (Claude Code's advisor tool). Judgment only |
 | `user` | Ask the user and wait for the answer |
@@ -76,8 +76,8 @@ Rules are in order. The first rule whose fact holds wins.
 | Facts | Holds when | Route |
 |-------|------------|-------|
 | `few-calls` | One or two grep or glob calls will find it | `main` |
-| `locate` | Locating where something lives (file, symbol, config key, keyword) across many places | `fast-explorer` |
-| `trace` | Tracing a flow, or a search that needs judgment | `Explore` |
+| `locate` | Locating where something lives (file, symbol, config key, keyword) across many places | `Explore` |
+| `trace` | Tracing a flow, or a search that needs judgment | `flow-tracer` |
 | `why` | Understanding why something happens | `deep-reasoner` |
 
 ### Advisor events
@@ -100,8 +100,9 @@ Subagents do not consult the advisor directly. If they need a judgment call, the
 question in their final report for the main session to decide.
 
 ## Relationship to other skills
-- The subagents it names (`deep-reasoner`, `feature-developer`, `fast-worker`, `fast-explorer`) are
-  not part of this plugin. Map each role in "Roles" to an agent of your own.
+- The subagents it names (`deep-reasoner`, `feature-developer`, `fast-worker`, `flow-tracer`) are
+  not part of this plugin. Map each role in "Roles" to an agent of your own. `Explore` is Claude Code's
+  built-in search agent; a user or project agent named `Explore` overrides it.
 - The skillify duplicate audit found no other skill that routes work between the main session,
   subagents, and an advisor. Its keyword hits (`subagent`, `advisor`, `routing`, `delegate`) are
   generic words in skills for other jobs.
