@@ -325,3 +325,11 @@ Use conventional commit messages, such as `feat: add new skill`, `fix: resolve p
 - To pass gate 9 of `validate.sh`, copy the skill to `<temp dir>/.claude/skills/orchestration-policy` and validate the copy.
 - The subagents it names (`deep-reasoner`, `feature-developer`, `fast-worker`, `flow-tracer`) are not in this repository. `Explore` is Claude Code's built-in search agent.
   Keep the "Roles" table, so a user without them can map each role to an agent of their own.
+- The `fork` role is not an agent. It is the agent tool's fork mode. The "Roles" table in `SKILL.md` names the call for each agent.
+  The Codex calls were read from the source at tag `rust-v0.167.0`, not run:
+  - Multi-agent v1 (`multi_agent`, on by default): `spawn_agent` with `fork_context: true`. Omitted means no fork.
+  - Multi-agent v2 (`multi_agent_v2`, stable but off by default): `fork_turns` takes `all` or `none` and defaults to `all`.
+    So in v2 every spawn copies the conversation unless it sets `none`. The `critic` row says so.
+  - 0.167.0 spawns a subagent only when the user or a skill explicitly asks for delegation.
+    Step 3 of the procedure says that this skill asks for it.
+  If an agent tool renames these fields, update the "Roles" table.

@@ -1,6 +1,6 @@
 ---
 name: orchestration-policy
-description: Use when the user asks for the orchestration policy by name or asks to apply it ("오케스트레이션 정책 적용해", "apply the orchestration policy"). It is an opt-in policy that routes each step of a coding task to the main session, a subagent (deep-reasoner, feature-developer, fast-worker, Explore, flow-tracer), or an advisor model. Use only when the user asks for it. Do not load it on your own.
+description: Use when the user asks for the orchestration policy by name or asks to apply it ("오케스트레이션 정책 적용해", "apply the orchestration policy"). It is an opt-in policy that routes each step of a coding task to the main session, a subagent (deep-reasoner, feature-developer, fast-worker, Explore, flow-tracer), a fork of the session, or an advisor model. Use only when the user asks for it. Do not load it on your own.
 ---
 
 # orchestration-policy
@@ -34,13 +34,17 @@ The script path is relative to this skill's directory. Python 3.10 or later.
 2. LATENT — for each step, decide which facts in "Step facts" hold.
 3. DETERMINISTIC — run `python3 scripts/route.py step FACT...` and follow its `route` and `note`.
    If no fact holds, the script returns the default route, `main`. Exit 2 means bad input.
+   If the route names a subagent or `fork`, this skill explicitly asks you to delegate that step.
 4. LATENT, then DETERMINISTIC — inside any step, before a search, pick the one fact in "Search facts"
    that holds and run `python3 scripts/route.py search FACT`.
 5. LATENT, then DETERMINISTIC — at each event in "Advisor events", run
    `python3 scripts/route.py advisor EVENT --consults N`, where N is the number of advisor consults
    already made in this task. Exit 1 means the budget is spent: ask the user and wait for the answer
    before you consult again.
-6. LATENT — if a route names a role that has no installed agent, do that step yourself.
+6. LATENT — if a route names a role that you cannot start (no installed agent with that name,
+   or no way to fork your session), do that step yourself.
+   Never replace `fork` with a subagent that starts without your conversation. If you cannot fork,
+   do the step yourself.
    If no advisor is available, ask the user and wait for the answer where the route says `advisor`.
 
 ### Roles
@@ -49,11 +53,12 @@ The script path is relative to this skill's directory. Python 3.10 or later.
 |------|------------|
 | `main` (you) | Edits you can state exactly, and product behavior with its tests |
 | `deep-reasoner` | Analysis and designs, when how to solve a problem is still undecided |
+| `fork` | A subagent that starts from a copy of your whole conversation and runs on your model. Start it with your agent tool's fork mode. In Claude Code, call the Agent tool with `subagent_type: "fork"`. In Codex, call `spawn_agent` with `fork_context: true` (multi-agent v1, the default) or `fork_turns: "all"` (multi-agent v2). Use it for a step that needs your context but whose intermediate output you do not need. Do not use it for a review: it inherits your assumptions |
 | `feature-developer` | Product-behavior work with a settled design that splits by context. Writes the tests for its logic |
 | `fast-worker` | Fully specified work that only needs to be typed out |
 | `Explore` | Broad read-only searches: locating where something lives, or sweeping many files and naming conventions when only the conclusion is needed. Returns `path:line` findings |
 | `flow-tracer` | Read-only searches that trace a flow or need judgment |
-| `critic` | Any general agent in a fresh context. Give it only the problem and the recommended option, and have it argue against the option |
+| `critic` | Any general agent in a fresh context. Give it only the problem and the recommended option, and have it argue against the option. In Codex multi-agent v2, set `fork_turns: "none"`, because v2 copies your conversation by default |
 | `advisor` | A stronger reviewer model that sees the whole conversation (Claude Code's advisor tool). Judgment only |
 | `user` | Ask the user and wait for the answer |
 
@@ -66,9 +71,10 @@ Rules are in order. The first rule whose fact holds wins.
 | 2 | `costly-decision` | The step locks in a costly-to-revert decision (architecture, DB schema, API contracts, migrations, technology choices), and the options are settled | `advisor` |
 | 2 | `costly-decision options-open` | As above, but the options are still open | `deep-reasoner`, then `critic` if it returns two or more options with no clear winner, then `advisor` |
 | 3 | `undecided` | How to solve it is still undecided: root cause unknown after one investigation pass, or two or more viable designs or algorithms | `deep-reasoner` |
-| 4 | `product-behavior` | The change decides what the product does: new or changed behavior, domain rules, edge-case handling | `main` |
-| 4 | `product-behavior splits-by-context` | As above, and the work splits by context: a large part that needs little of your context and returns a compact result, or independent parts that run in parallel | `feature-developer` |
-| 5 | `fully-specified` | The outcome is fully specified and only needs to be typed out: boilerplate, renames, formatting, the same edit across many files, tests whose cases are already listed | `fast-worker` |
+| 4 | `context-bound-bulk` | All three hold. (a) The step needs your conversation context (the user's intent, earlier decisions, constraints), and a brief cannot carry it. (b) The step makes large intermediate output (tens of files to read, a long test log), and you need only its conclusion. (c) The session goes on long after this step, or your context is close to compaction | `fork` |
+| 5 | `product-behavior` | The change decides what the product does: new or changed behavior, domain rules, edge-case handling | `main` |
+| 5 | `product-behavior splits-by-context` | As above, and the work splits by context: a large part that needs little of your context and returns a compact result, or independent parts that run in parallel | `feature-developer` |
+| 6 | `fully-specified` | The outcome is fully specified and only needs to be typed out: boilerplate, renames, formatting, the same edit across many files, tests whose cases are already listed | `fast-worker` |
 | default | none | No rule above matches: answering a question, running tests, committing, reporting | `main` |
 
 ### Search facts
@@ -103,6 +109,8 @@ question in their final report for the main session to decide.
 - The subagents it names (`deep-reasoner`, `feature-developer`, `fast-worker`, `flow-tracer`) are
   not part of this plugin. Map each role in "Roles" to an agent of your own. `Explore` is Claude Code's
   built-in search agent; a user or project agent named `Explore` overrides it.
+- `fork` is not an installed agent. It is a mode of your agent tool. The "Roles" table says how to
+  start it in Claude Code and in Codex.
 - The skillify duplicate audit found no other skill that routes work between the main session,
   subagents, and an advisor. Its keyword hits (`subagent`, `advisor`, `routing`, `delegate`) are
   generic words in skills for other jobs.

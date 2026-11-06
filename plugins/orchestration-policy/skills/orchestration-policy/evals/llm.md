@@ -23,3 +23,16 @@
   have no clear winner, and consults the advisor before it commits.
 - Failure mode if procedure skipped: Claude judges the task `undecided` (rule 3) and commits to the
   deep-reasoner design without the advisor consult that a costly-to-revert decision needs.
+
+## Scenario 4 — bulk work that needs the conversation
+- Input: under the policy, after a long session, the user and Claude agreed that the legacy
+  `billing/` module must not change. The user asks: "새 API를 쓰는 호출부 40곳이 맞게 바뀌었는지
+  확인해줘." The task goes on after this check.
+- Expected: Claude judges `context-bound-bulk` (the `billing/` constraint lives only in the
+  conversation, 40 files are bulk output, and the session goes on), runs `route.py step
+  context-bound-bulk`, gets rule 4 (`fork`), and forks its session. The fork returns a short list
+  of wrong call sites.
+- Contrast: "호출부 40곳에서 `oldName`을 `newName`으로 바꿔줘" fails fact (a), because a brief
+  carries all of it. The step goes to rule 6 (`fast-worker`).
+- Failure mode if procedure skipped: Claude reads all 40 files into its own context, or sends a
+  fresh subagent a brief that drops the `billing/` constraint.

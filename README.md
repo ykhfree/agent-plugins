@@ -190,8 +190,8 @@ In Claude Code, you can also call it directly:
 
 | Part | Content |
 |---|---|
-| Roles | Main session, `deep-reasoner`, `feature-developer`, `fast-worker`, `Explore`, `flow-tracer`, critic, advisor |
-| Step facts | Five rules, evaluated top to bottom; the first match wins. If none matches, the main session does the step |
+| Roles | Main session, `deep-reasoner`, a fork of the session, `feature-developer`, `fast-worker`, `Explore`, `flow-tracer`, critic, advisor |
+| Step facts | Six rules, evaluated top to bottom; the first match wins. If none matches, the main session does the step |
 | Search facts | Who searches, by how hard the search is |
 | Advisor events | When to consult, when not to, and at most 3 consults per task |
 | `scripts/route.py` | Applies the rules to the facts the agent judged, and stops a 4th advisor consult |
@@ -200,6 +200,9 @@ In Claude Code, you can also call it directly:
 
 - Subagents with the role names above. The plugin does not include them.
   If an agent is not installed, the main session does that step itself.
+- For the fork role, an agent tool that can copy the conversation into a subagent:
+  the Agent tool's `fork` type in Claude Code, or `spawn_agent` with a forked context in Codex.
+  Without one, the main session does that step itself.
 - An advisor model, such as Claude Code's advisor tool. Without one, the agent asks the user at each consult point.
 - Python 3.10 or later for the script.
 

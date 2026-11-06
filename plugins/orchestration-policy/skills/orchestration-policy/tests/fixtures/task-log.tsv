@@ -6,6 +6,7 @@ advisor	large-plan --consults 0	0	advisor
 step	costly-decision options-open	0	deep-reasoner,critic,advisor
 advisor	costly-decision --consults 1	0	advisor
 step	product-behavior	0	main
+step	product-behavior context-bound-bulk	0	fork
 step	fully-specified	0	fast-worker
 step		0	main
 advisor	repeat-error --consults 2	0	advisor

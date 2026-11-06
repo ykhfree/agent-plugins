@@ -26,16 +26,24 @@ route_is() {
 
 # 1) happy path: each step rule alone.
 run 0 step exact-edit;        route_is 1 '["main"]'
-run 0 step undecided;         route_is 3 '["deep-reasoner"]'
-run 0 step product-behavior;  route_is 4 '["main"]'
-run 0 step fully-specified;   route_is 5 '["fast-worker"]'
+run 0 step undecided;          route_is 3 '["deep-reasoner"]'
+run 0 step context-bound-bulk; route_is 4 '["fork"]'
+run 0 step product-behavior;   route_is 5 '["main"]'
+run 0 step fully-specified;    route_is 6 '["fast-worker"]'
 
 # 2) boundary: order. An exact edit wins over a fully specified one (no fast-worker for
 #    an edit you can state), and a costly decision wins over undecided.
 run 0 step fully-specified exact-edit;           route_is 1 '["main"]'
 run 0 step undecided costly-decision options-open; route_is 2 '["deep-reasoner", "critic", "advisor"]'
 run 0 step costly-decision;                      route_is 2 '["advisor"]'
-run 0 step fully-specified product-behavior splits-by-context; route_is 4 '["feature-developer"]'
+run 0 step fully-specified product-behavior splits-by-context; route_is 5 '["feature-developer"]'
+#    The fork rule sits after rules 1-3, so a small edit stays in main and a fork never makes
+#    a design call. It sits before rules 5-6, so it takes bulk work that main or fast-worker
+#    would otherwise get.
+run 0 step context-bound-bulk exact-edit;       route_is 1 '["main"]'
+run 0 step context-bound-bulk undecided;        route_is 3 '["deep-reasoner"]'
+run 0 step product-behavior context-bound-bulk; route_is 4 '["fork"]'
+run 0 step fully-specified context-bound-bulk;  route_is 4 '["fork"]'
 
 # 3) boundary: the advisor budget. Consults 0..2 are allowed; the 4th (3 made) goes to the user.
 run 0 advisor repeat-error --consults 0; route_is '"advisor"' '["advisor"]'

@@ -3,14 +3,15 @@
 
 Input:  argv, one of
           step FACT...                  facts: exact-edit, costly-decision, options-open, undecided,
-                                        product-behavior, splits-by-context, fully-specified
+                                        context-bound-bulk, product-behavior, splits-by-context,
+                                        fully-specified
           search FACT                   exactly one of: few-calls, locate, trace, why
           advisor EVENT --consults N    EVENT: costly-decision, large-plan, repeat-error, declare-done,
                                         trivial, rephrase; N = advisor consults already made in this task
         SKILL.md defines when each fact or event holds.
 Output: one JSON object on stdout, {"rule", "route", "note"}.
-        route: the roles to use, in order (main, deep-reasoner, critic, advisor, feature-developer,
-        fast-worker, Explore, flow-tracer, user). An empty route means "do not consult".
+        route: the roles to use, in order (main, deep-reasoner, critic, advisor, fork,
+        feature-developer, fast-worker, Explore, flow-tracer, user). An empty route means "do not consult".
         A step that matches no rule gets the default route, main.
 Exit:   0 follow the route, 1 the advisor budget is spent and you must ask the user,
         2 bad input (message on stderr as "route: <message>").
@@ -22,7 +23,14 @@ import sys
 ADVISOR_BUDGET = 3
 
 # Step rules in order; the first rule whose fact is given wins.
-STEP_FACTS = ("exact-edit", "costly-decision", "undecided", "product-behavior", "fully-specified")
+STEP_FACTS = (
+    "exact-edit",
+    "costly-decision",
+    "undecided",
+    "context-bound-bulk",
+    "product-behavior",
+    "fully-specified",
+)
 # A modifier changes the outcome of the rule it belongs to.
 MODIFIERS = {"options-open": "costly-decision", "splits-by-context": "product-behavior"}
 
@@ -59,6 +67,13 @@ def step(facts: list[str]) -> tuple[int, dict]:
             return 0, {"rule": number, "route": ["advisor"], "note": "consult the advisor before committing"}
         if fact == "undecided":
             return 0, {"rule": number, "route": ["deep-reasoner"], "note": "deep-reasoner designs; final calls are yours"}
+        if fact == "context-bound-bulk":
+            return 0, {
+                "rule": number,
+                "route": ["fork"],
+                "note": "fork your session, not a fresh subagent (Roles says how); "
+                "it already has your context, so state only the step and the result you need",
+            }
         if fact == "product-behavior":
             if "splits-by-context" in given:
                 return 0, {"rule": number, "route": ["feature-developer"], "note": "it writes the tests for its logic"}
