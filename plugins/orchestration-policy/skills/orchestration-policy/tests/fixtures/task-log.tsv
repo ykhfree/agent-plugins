@@ -8,6 +8,7 @@ advisor	costly-decision --consults 1	0	advisor
 step	product-behavior	0	main
 step	product-behavior context-bound-bulk	0	fork
 step	fully-specified	0	fast-worker
+step	bulk-output	0	log-reader
 step		0	main
 advisor	repeat-error --consults 2	0	advisor
 advisor	declare-done --consults 3	1	user

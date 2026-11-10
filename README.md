@@ -190,8 +190,8 @@ In Claude Code, you can also call it directly:
 
 | Part | Content |
 |---|---|
-| Roles | Main session, `deep-reasoner`, a fork of the session, `feature-developer`, `fast-worker`, `Explore`, `flow-tracer`, critic, advisor |
-| Step facts | Six rules, evaluated top to bottom; the first match wins. If none matches, the main session does the step |
+| Roles | Main session, `deep-reasoner`, a fork of the session, `log-reader`, `feature-developer`, `fast-worker`, `Explore`, `flow-tracer`, critic, advisor |
+| Step facts | Seven rules, evaluated top to bottom; the first match wins. If none matches, the main session does the step |
 | Search facts | Who searches, by how hard the search is |
 | Advisor events | When to consult, when not to, and at most 3 consults per task |
 | `scripts/route.py` | Applies the rules to the facts the agent judged, and stops a 4th advisor consult |

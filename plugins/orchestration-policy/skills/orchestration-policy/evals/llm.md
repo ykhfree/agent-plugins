@@ -36,3 +36,16 @@
   carries all of it. The step goes to rule 6 (`fast-worker`).
 - Failure mode if procedure skipped: Claude reads all 40 files into its own context, or sends a
   fresh subagent a brief that drops the `billing/` constraint.
+
+## Scenario 5 — a long test log that needs no conversation context
+- Input: under the policy, the user asks: "전체 테스트 돌려서 실패한 것만 알려줘." The suite prints
+  thousands of lines. Nothing in the conversation changes which failures matter.
+- Expected: Claude judges `bulk-output` (large log, a brief carries the command and the facts to
+  return, and each failure can be checked by test name), runs `route.py step bulk-output`, gets
+  rule 5 (`log-reader`), and gives it the test command. It reports each failing test with its first
+  error line. Claude opens only the failures it will fix.
+- Contrast: if the user said earlier that failures in `legacy/` are known and must be ignored, and
+  the session goes on, the step is `context-bound-bulk` (rule 4, `fork`). A brief could carry that
+  one rule, so this contrast holds only when the constraints are too many for a brief.
+- Failure mode if procedure skipped: Claude runs the suite in its own session, and the full log
+  fills the context of the most expensive model.

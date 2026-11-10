@@ -3,14 +3,14 @@
 
 Input:  argv, one of
           step FACT...                  facts: exact-edit, costly-decision, options-open, undecided,
-                                        context-bound-bulk, product-behavior, splits-by-context,
-                                        fully-specified
+                                        context-bound-bulk, bulk-output, product-behavior,
+                                        splits-by-context, fully-specified
           search FACT                   exactly one of: few-calls, locate, trace, why
           advisor EVENT --consults N    EVENT: costly-decision, large-plan, repeat-error, declare-done,
                                         trivial, rephrase; N = advisor consults already made in this task
         SKILL.md defines when each fact or event holds.
 Output: one JSON object on stdout, {"rule", "route", "note"}.
-        route: the roles to use, in order (main, deep-reasoner, critic, advisor, fork,
+        route: the roles to use, in order (main, deep-reasoner, critic, advisor, fork, log-reader,
         feature-developer, fast-worker, Explore, flow-tracer, user). An empty route means "do not consult".
         A step that matches no rule gets the default route, main.
 Exit:   0 follow the route, 1 the advisor budget is spent and you must ask the user,
@@ -28,6 +28,7 @@ STEP_FACTS = (
     "costly-decision",
     "undecided",
     "context-bound-bulk",
+    "bulk-output",
     "product-behavior",
     "fully-specified",
 )
@@ -74,6 +75,13 @@ def step(facts: list[str]) -> tuple[int, dict]:
                 "note": "fork your session, not a fresh subagent (Roles says how); "
                 "it already has your context, so state only the step and the result you need",
             }
+        if fact == "bulk-output":
+            return 0, {
+                "rule": number,
+                "route": ["log-reader"],
+                "note": "give it the command or the file to read and the facts to return; "
+                "it runs on a small model, so check what you act on",
+            }
         if fact == "product-behavior":
             if "splits-by-context" in given:
                 return 0, {"rule": number, "route": ["feature-developer"], "note": "it writes the tests for its logic"}
@@ -106,7 +114,11 @@ def advisor(args: list[str]) -> tuple[int, dict]:
             "route": ["user"],
             "note": f"{consults} consults already made; the limit is {ADVISOR_BUDGET} per task, so ask the user first",
         }
-    return 0, {"rule": "advisor", "route": ["advisor"], "note": f"consult {consults + 1} of {ADVISOR_BUDGET}"}
+    note = f"consult {consults + 1} of {ADVISOR_BUDGET}"
+    if event == "repeat-error":
+        # Cheaper steps first: a check that reproduces the error, then more effort, then a stronger model.
+        note += "; first make sure a test or script reproduces the error"
+    return 0, {"rule": "advisor", "route": ["advisor"], "note": note}
 
 
 def main(argv: list[str]) -> int:

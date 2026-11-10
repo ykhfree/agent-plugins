@@ -323,7 +323,8 @@ Use conventional commit messages, such as `feat: add new skill`, `fix: resolve p
   plugins/skillify/skills/skillify/scripts/run_tests.sh plugins/orchestration-policy/skills/orchestration-policy
   ```
 - To pass gate 9 of `validate.sh`, copy the skill to `<temp dir>/.claude/skills/orchestration-policy` and validate the copy.
-- The subagents it names (`deep-reasoner`, `feature-developer`, `fast-worker`, `flow-tracer`) are not in this repository. `Explore` is Claude Code's built-in search agent.
+- The subagents it names (`deep-reasoner`, `feature-developer`, `fast-worker`, `log-reader`, `flow-tracer`) are not in this repository. `Explore` is Claude Code's built-in search agent.
+  `log-reader` and `Explore` exist to move bulk reading to a small model. Keep model names out of `SKILL.md` and `route.py`, because Codex uses other models; the user's agent files set the model.
   Keep the "Roles" table, so a user without them can map each role to an agent of their own.
 - The `fork` role is not an agent. It is the agent tool's fork mode. The "Roles" table in `SKILL.md` names the call for each agent.
   The Codex calls were read from the source at tag `rust-v0.167.0`, not run:

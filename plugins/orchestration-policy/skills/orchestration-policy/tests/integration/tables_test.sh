@@ -73,6 +73,6 @@ for line in (root / "tests/fixtures/task-log.tsv").read_text().splitlines():
     assert p.returncode == int(want_exit), (line, p.returncode, p.stderr)
     assert json.loads(p.stdout)["route"] == want_route.split(","), (line, p.stdout)
     steps += 1
-assert steps == 12, steps
+assert steps == 13, steps
 print(f"tables_test: ok ({steps} replayed steps)")
 PY
