@@ -44,8 +44,8 @@
   return, and each failure can be checked by test name), runs `route.py step bulk-output`, gets
   rule 5 (`log-reader`), and gives it the test command. It reports each failing test with its first
   error line. Claude opens only the failures it will fix.
-- Contrast: if the user said earlier that failures in `legacy/` are known and must be ignored, and
-  the session goes on, the step is `context-bound-bulk` (rule 4, `fork`). A brief could carry that
-  one rule, so this contrast holds only when the constraints are too many for a brief.
+- Contrast: if the session agreed on several rules about which failures matter (known flaky tests,
+  modules the user froze, a migration half done), and a brief cannot carry them all, fact (b)
+  fails. The step is `context-bound-bulk` (rule 4, `fork`).
 - Failure mode if procedure skipped: Claude runs the suite in its own session, and the full log
   fills the context of the most expensive model.
