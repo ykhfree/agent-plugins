@@ -327,10 +327,19 @@ Use conventional commit messages, such as `feat: add new skill`, `fix: resolve p
   `log-reader` and `Explore` exist to move bulk reading to a small model. Keep model names out of `SKILL.md` and `route.py`, because Codex uses other models; the user's agent files set the model.
   Keep the "Roles" table, so a user without them can map each role to an agent of their own.
 - The `fork` role is not an agent. It is the agent tool's fork mode. The "Roles" table in `SKILL.md` names the call for each agent.
-  The Codex calls were read from the source at tag `rust-v0.167.0`, not run:
+  The Codex calls were read from the source at tag `rust-v0.167.1`, not run:
   - Multi-agent v1 (`multi_agent`, on by default): `spawn_agent` with `fork_context: true`. Omitted means no fork.
+    v1 rejects `fork_context: true` together with `agent_type`.
   - Multi-agent v2 (`multi_agent_v2`, stable but off by default): `fork_turns` takes `all` or `none` and defaults to `all`.
     So in v2 every spawn copies the conversation unless it sets `none`. The `critic` row says so.
-  - 0.167.0 spawns a subagent only when the user or a skill explicitly asks for delegation.
+    v2 rejects `fork_context`. v2 applies `agent_type` to a fork.
+  - 0.167.1 spawns a subagent only when the user or a skill explicitly asks for delegation.
     Step 3 of the procedure says that this skill asks for it.
+  The agent cannot see which version runs. It sees only the arguments that `spawn_agent` lists.
+  So the "Roles" table names the argument (`fork_turns` or `fork_context`), not the version. Keep it that way.
   If an agent tool renames these fields, update the "Roles" table.
+- The `advisor` role is Claude Code's advisor tool. Codex 0.167.1 has no built-in `advisor` agent type:
+  its built-in types are `default`, `explorer`, and `worker`. A Codex user defines `advisor` as an agent role.
+  It can see the conversation only in v2 (`agent_type: "advisor"` with `fork_turns: "all"`).
+  `spawn_agent` lists `agent_type` only if the config has agent roles (`expose_agent_type`).
+  So the `advisor` row tells the agent to check that `spawn_agent` lists the type.

@@ -201,9 +201,11 @@ In Claude Code, you can also call it directly:
 - Subagents with the role names above. The plugin does not include them.
   If an agent is not installed, the main session does that step itself.
 - For the fork role, an agent tool that can copy the conversation into a subagent:
-  the Agent tool's `fork` type in Claude Code, or `spawn_agent` with a forked context in Codex.
+  the Agent tool's `fork` type in Claude Code, or `spawn_agent` with `fork_turns` or `fork_context` in Codex.
   Without one, the main session does that step itself.
-- An advisor model, such as Claude Code's advisor tool. Without one, the agent asks the user at each consult point.
+- An advisor model that sees the conversation. In Claude Code, it is the advisor tool.
+  In Codex, it is an `advisor` agent role that you define. It needs a `spawn_agent` tool that has `fork_turns`.
+  Without one, the agent asks the user at each consult point.
 - Python 3.10 or later for the script.
 
 ## Contributing

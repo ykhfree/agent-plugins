@@ -53,14 +53,14 @@ The script path is relative to this skill's directory. Python 3.10 or later.
 |------|------------|
 | `main` (you) | Edits you can state exactly, and product behavior with its tests |
 | `deep-reasoner` | Analysis and designs, when how to solve a problem is still undecided |
-| `fork` | A subagent that starts from a copy of your whole conversation and runs on your model. Start it with your agent tool's fork mode. In Claude Code, call the Agent tool with `subagent_type: "fork"`. In Codex, call `spawn_agent` with `fork_context: true` (multi-agent v1, the default) or `fork_turns: "all"` (multi-agent v2). Use it for a step that needs your context but whose intermediate output you do not need. Do not use it for a review: it inherits your assumptions |
+| `fork` | A subagent that starts from a copy of your whole conversation and runs on your model. Start it with your agent tool's fork mode. In Claude Code, call the Agent tool with `subagent_type: "fork"`. In Codex, read the arguments that your `spawn_agent` tool lists. If it lists `fork_turns`, set `fork_turns: "all"`. If it lists `fork_context`, set `fork_context: true`. In both cases, omit `agent_type`. Use it for a step that needs your context but whose intermediate output you do not need. Do not use it for a review: it inherits your assumptions |
 | `log-reader` | A subagent on a small, cheap model. It runs the command you give it or reads the file you name, and returns only the facts you ask for, such as each failing test with its first error line. It does not edit files |
 | `feature-developer` | Product-behavior work with a settled design that splits by context. Writes the tests for its logic |
 | `fast-worker` | Fully specified work that only needs to be typed out |
 | `Explore` | Broad read-only searches: locating where something lives, or sweeping many files and naming conventions when only the conclusion is needed. Returns `path:line` findings |
 | `flow-tracer` | Read-only searches that trace a flow or need judgment |
-| `critic` | Any general agent in a fresh context. Give it only the problem and the recommended option, and have it argue against the option. In Codex multi-agent v2, set `fork_turns: "none"`, because v2 copies your conversation by default |
-| `advisor` | A stronger reviewer model that sees the whole conversation (Claude Code's advisor tool). Judgment only |
+| `critic` | Any general agent in a fresh context. Give it only the problem and the recommended option, and have it argue against the option. In Codex, if your `spawn_agent` tool lists `fork_turns`, set `fork_turns: "none"`, because that tool copies your conversation by default |
+| `advisor` | A stronger reviewer model that sees the whole conversation. Judgment only. In Claude Code, call the advisor tool. In Codex, an advisor is available only if your `spawn_agent` tool lists both an `advisor` agent type and `fork_turns`. Then call `spawn_agent` with `agent_type: "advisor"` and `fork_turns: "all"`. A `spawn_agent` tool that lists `fork_context` rejects a fork that sets `agent_type`, so it has no advisor |
 | `user` | Ask the user and wait for the answer |
 
 ### Step facts
@@ -116,6 +116,8 @@ question in their final report for the main session to decide.
   route cheap.
 - `fork` is not an installed agent. It is a mode of your agent tool. The "Roles" table says how to
   start it in Claude Code and in Codex.
+- Codex has no built-in `advisor` agent type. The user defines it as an agent role with a stronger
+  model. The "Roles" table says when Codex can start it.
 - The skillify duplicate audit found no other skill that routes work between the main session,
   subagents, and an advisor. Its keyword hits (`subagent`, `advisor`, `routing`, `delegate`) are
   generic words in skills for other jobs.
