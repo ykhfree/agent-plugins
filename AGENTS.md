@@ -331,7 +331,9 @@ Use conventional commit messages, such as `feat: add new skill`, `fix: resolve p
   - Multi-agent v1 (`multi_agent`, on by default): `spawn_agent` with `fork_context: true`. Omitted means no fork.
     v1 rejects `fork_context: true` together with `agent_type`.
   - Multi-agent v2 (`multi_agent_v2`, stable but off by default): `fork_turns` takes `all` or `none` and defaults to `all`.
-    So in v2 every spawn copies the conversation unless it sets `none`. The `critic` row says so.
+    So in v2 every spawn copies the conversation unless it sets `none`.
+    The sentence under the "Roles" table sets `none` for every role except `fork` and `advisor`.
+    This keeps the small-model roles cheap and matches Claude Code, where only a fork copies the conversation.
     v2 rejects `fork_context`. v2 applies `agent_type` to a fork.
   - 0.167.1 spawns a subagent only when the user or a skill explicitly asks for delegation.
     Step 3 of the procedure says that this skill asks for it.

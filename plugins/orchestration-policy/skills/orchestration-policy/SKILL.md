@@ -59,9 +59,13 @@ The script path is relative to this skill's directory. Python 3.10 or later.
 | `fast-worker` | Fully specified work that only needs to be typed out |
 | `Explore` | Broad read-only searches: locating where something lives, or sweeping many files and naming conventions when only the conclusion is needed. Returns `path:line` findings |
 | `flow-tracer` | Read-only searches that trace a flow or need judgment |
-| `critic` | Any general agent in a fresh context. Give it only the problem and the recommended option, and have it argue against the option. In Codex, if your `spawn_agent` tool lists `fork_turns`, set `fork_turns: "none"`, because that tool copies your conversation by default |
+| `critic` | Any general agent in a fresh context. Give it only the problem and the recommended option, and have it argue against the option. |
 | `advisor` | A stronger reviewer model that sees the whole conversation. Judgment only. In Claude Code, call the advisor tool. In Codex, an advisor is available only if your `spawn_agent` tool lists both an `advisor` agent type and `fork_turns`. Then call `spawn_agent` with `agent_type: "advisor"` and `fork_turns: "all"`. A `spawn_agent` tool that lists `fork_context` rejects a fork that sets `agent_type`, so it has no advisor |
 | `user` | Ask the user and wait for the answer |
+
+In Codex, if your `spawn_agent` tool lists `fork_turns`, set `fork_turns: "none"` for every role except
+`fork` and `advisor`. That tool copies your whole conversation into the subagent by default.
+A role that starts without your conversation needs a brief that carries the whole step.
 
 ### Step facts
 Rules are in order. The first rule whose fact holds wins.
