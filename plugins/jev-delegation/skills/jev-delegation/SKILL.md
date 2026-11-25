@@ -72,8 +72,9 @@ The script paths are relative to this skill's directory.
   `complete: false` → the request budget cut the search; narrow ROOT.
 - `jev which SHOT... -q "..."` → rank screenshots by whether they show a target. Open the top ones only.
 - `jev locate SHOT -q "..."` → click point of a target in one screenshot, checked with a marker.
-- `jev detect PHOTO -l LABEL...` → which of the given object labels a photo shows, each with one box and
+- `jev detect PHOTO -l LABEL [-l LABEL ...]` → which of the given object labels a photo shows, each with one box and
   a `count` (`one`/`several`). Jev cannot name objects, so you give the labels as singular nouns.
+  Each `-l` takes one label: write `-l dog -l bicycle`, not `-l dog bicycle` (exit 2).
   `--draw OUT.png` saves a copy with the boxes.
 
 ### Screens and photos
